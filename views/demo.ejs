@@ -1,0 +1,40 @@
+<html>
+  <body>
+    <h2>Web3 API version</h2>
+    <p id="p1"></p>
+    <h2>My Account</h2>
+    <p id="account"></p>
+    <button id="getEncryptionKeyButton">
+      Get Encryption Key
+    </button>
+    <p>
+      Encryption key: <span id="encryptionKeyDisplay"></span>
+    </p>
+    <div id="encrypt-message-form">
+      <input type="text" placeholder="Message to encrypt" id="encryptMessageInput">
+      <button id="encryptButton">
+        Encrypt
+      </button>
+    </div>
+    <p>
+      ciphertext: <span id="ciphertextDisplay"></span>
+    </p>
+
+    <button class="btn btn-primary btn-lg btn-block mb-3" id="decryptButton">
+      Decrypt
+    </button>
+    <p>
+      cleartext: <span id="cleartextDisplay"></span>
+    </p>
+
+    <script src="./js/web3_bundle.js"></script>
+    <script src="./js/bundle.js"></script>
+
+    <script>
+      async function main(){
+          
+      }
+      main();
+    </script>
+    </body>
+</html>

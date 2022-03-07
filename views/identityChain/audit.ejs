@@ -1,0 +1,44 @@
+<%- include('header') -%>
+    <body>
+        <div class="container mt-2">
+            <div class="row">
+                <div class="col-md-6 center-block offset-md-3">
+                    <div class="card text-center">
+                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">驗證用戶身份
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group mb-3">
+                                <input type="text" placeholder="Enter username" aria-label="Parameter"
+                                    aria-describedby="basic-addon2" required="required" class="func1-input0 form-control">
+                                <input type="text"
+                                    placeholder="Enter ID card number" aria-label="Parameter" aria-describedby="basic-addon2" required="required"
+                                    class="func1-input1 form-control">
+                                <div class="input-group-append"><button type="button" class="func1 btn btn-secondary">驗證用戶身份</button></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        $(".func1").on('click', async function (e) {
+            let input_0 = $(".func1-input0").val();
+            let input_1 = $(".func1-input1").val();
+            $.ajax({
+                url: '/identityChain/addUser',
+                data: { IDNumber: input_1, userName: input_0},
+                type: 'post',
+                cache: false,
+                dataType: 'json',
+                success: function(res) {
+                    alert(res.msg);
+                },
+                error: function(err) {
+                    alert(err);
+                }
+            });
+        })
+    </script>
+   
+<%- include('footer') -%>

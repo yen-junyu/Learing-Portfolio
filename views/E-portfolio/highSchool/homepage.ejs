@@ -1,0 +1,57 @@
+<%- include('header') -%>
+<body>
+    <div class="container mt-2">
+        <div class="row">
+            <div class="col-md-8 center-block offset-md-2">
+                <div style="margin-top:10px" class="card text-center">
+                    <div style="font-size: 1.5rem; font-weight:bold" class="card-header">登入
+                    </div>
+                    <div class="card-body">
+                        <button id="loginWithMetamask"
+                            class="btn btn-primary btn-lg btn-block mt-3">
+                            使用Metamask登入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var account;
+    var require_signature = "<%= require_signature  %>"
+    //listener
+    async function buildListener() {
+        window.ethereum.on('accountsChanged', function (accounts) {
+            account = accounts[0];
+        });
+        $("#loginWithMetamask").on('click', async function (e) {
+            let result = await web3.eth.personal.sign(require_signature, account);
+            $.ajax({
+                url: '/E-portfolio/highSchool/loginWithMetamask',
+                data: {
+                    signature: result,   // signature
+                    account: account  // account
+                },
+                type: 'post',
+                success: function (res) {
+                    console.log(res)
+                    if (res.url)
+                        window.location.href = res.url;
+                },
+                error: function (err) {
+                    console.log("error");
+                    alert();
+                }
+            });
+        });
+    }
+
+    async function main() {
+        let accounts = await web3.eth.getAccounts();
+        account = accounts[0];
+        buildListener();
+    }
+    main();
+</script>
+<%- include('footer') -%>

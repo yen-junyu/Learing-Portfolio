@@ -1,0 +1,281 @@
+<%- include('header') -%>
+    <body>
+        <div class="container mt-2">
+            <div class="row">
+                <div class="col-md-8 center-block offset-md-2">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            <h4 style="margin:0;" class="font-weight-bold">Profile </h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="mt-2 table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Attributes</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>User Name</td>
+                                        <td> <span>
+                                                <%= user.userName %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>ID Card</td>
+                                        <td> <span>
+                                                <%= user.IDNumber %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>birth</td>
+                                        <td> <span>
+                                                <%= user.birth %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>email</td>
+                                        <td> <span>
+                                                <%= user.email %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>phone</td>
+                                        <td> <span>
+                                                <%= user.phone %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>hashed</td>
+                                        <td> <span>
+                                                <%= user.hashed %>
+                                            </span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>status</td>
+                                        <td> <span>
+                                                <%= user.status %>
+                                            </span></td>
+                                    </tr>
+                                
+                            <% if(user.address !="0x"){ %>
+                                <tr>
+                                    <td>address</td>
+                                    <td> <span>
+                                            <%= user.address %>
+                                        </span></td>
+                                </tr>
+                                <tr>
+                                    <td>public key</td>
+                                    <td>
+                                        <span class="func1">
+                                        <%  if(user.pubkey !="0x" ){ %>
+                                            <%= user.pubkey %>
+                                        <% }else{ %>
+                                            <button type="button" class="btn btn-primary addpubkey">新增公鑰
+                                            </button>
+                                        <% } %>
+                                        </span>
+                                    </td>
+                                </tr>
+                                
+
+                            <%  } %>
+                                </tbody>
+                            </table>
+                            <% if(user.address=="0x" && user.status=="true" ){ %>
+                                <button type="button" data-toggle="modal" data-target="#bindModal"
+                                    class="btn btn-block btn-info bind-btn">綁定帳號</button>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% if(user.address!="0x"){ %>
+                <div class="row mt-2">
+                    <div class="col-md-8 center-block offset-md-2">
+                        <div class="card text-center">
+                            <div class="card-header">
+                                <h4 style="margin:0;" class="font-weight-bold">Personal identity </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 p-2 mb-2 font-weight-bold">Owner</div>
+                                    <div class="owner col-md-8 p-2 mb-2">0xfa47487bce400de57d0ea526a484dfa7093dbdd6</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 p-2 mb-2 font-weight-bold">Contract address</div>
+                                    <div class="contractAddress col-md-8 p-2 mb-2">0xfa47487bce400de57d0ea526a484dfa7093dbdd6</div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-12 p-2 mb-2 font-weight-bold">Encrypted material</div>
+                                    <div class="col-md-3 p-2 mb-2 font-weight-bold">
+                                        Fabric
+                                    </div>
+                                    <div class="col-md-9 p-2 mb-2">
+                                        <div class="input-group mb-3">
+                                            <input type="text" placeholder="Add private key for encryption" aria-label="Parameter" aria-describedby="basic-addon2" class="func2-input0 form-control">
+                                            <div class="input-group-append">
+                                                <button type="button" class="func2-btn1 btn btn-primary">加密</button>
+                                                <button type="button" class="func2-btn2 btn btn-secondary">清除</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="input-group mb-3">
+                                            <textarea class="form-control func2-output" aria-label="With textarea" readonly="readonly" placeholder="Encryption result" rows="4"></textarea>
+                                            <div class="input-group-prepend">
+                                                <button type="button" class="func2-btn3 btn btn-info">上傳</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="input-group mb-3">
+                                            <input type="text" placeholder="Add CSR for encryption" aria-label="Parameter" aria-describedby="basic-addon2" class="func3-input0 form-control">
+                                        <div class="input-group-append"><button type="button" class="func3 btn btn-info">加入CSR</button></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <div id="bindModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal fade">
+            <div role="document" class="modal-dialog">
+                <div class="modal-content">
+                    <div class="card text-center">
+                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">帳號綁定<button type="button"
+                                data-dismiss="modal" aria-label="Close" class="close"><span
+                                    aria-hidden="true">×</span></button></div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title"> </h5>
+                        <form action="#" method="post">
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span id="" class="input-group-text">Ethereum
+                                        address</span></div><input id="address" type="text" name="address"
+                                    placeholder="Address" required="required" class="form-control" readonly="readonly"
+                                    style="background-color: white;">
+                            </div>
+                            <div class="input-group mt-3">
+                                <div class="input-group-prepend"><span id="" class="input-group-text">身份證字號</span></div>
+                                <input id="identityId" type="text" name="identityId" placeholder="Identity card ID"
+                                    required="required" class="form-control" readonly="readonly"
+                                    style="background-color: white;">
+                            </div><input type="button" value="送出"
+                                class="btn btn-info btn-lg btn-block mt-4 submit-bind-btn">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        var identityManagerABI,personalIdentityABI;
+        var account;
+        var IDNumber = "<%= user.IDNumber  %>"
+        var contract_address = "<%= contract_address %>"
+        var address = "<%= user.address %>"
+        console.log(address)
+        
+
+        function stringifiableToHex(value) {
+          //return web3.utils.utf8ToHex(value)
+          return ethers.utils.hexlify(Buffer.from(JSON.stringify(value)));
+      }
+        async function buildListener(){
+            var identityManagerInstance = new web3.eth.Contract(identityManagerABI , contract_address);
+            var personalIdentityInstance;
+
+            if(address != "0x"){
+                // Set Contract instance
+                let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
+                personalIdentityInstance = new web3.eth.Contract(personalIdentityABI , PIContractAddress);
+                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
+               
+                $(".owner").text(address);
+                $(".contractAddress").text(PIContractAddress);
+                $(".func2-output").text(encryptKey);
+            }
+            window.ethereum.on('accountsChanged', function (accounts) {
+                account = accounts[0];
+                $("#address").val(account)
+            });
+            $(".submit-bind-btn").on('click', async function (e) {
+                let address = $("#address").val();
+                let IDNumber = $("#identityId").val();
+                
+                $.ajax({
+                    url: '/identityChain/bindAccount',
+                    data: {
+                        address: address, // identity
+                        IDNumber: IDNumber,   // signature
+                    },
+                    type: 'post',
+                    success: function (res) {
+                        alert(res.msg);
+                        //location.reload();
+                    },
+                    error: function (err) {
+                        console.log("error");
+                        alert();
+                    }
+                });
+            });
+            $(".func1").on('click',async function(e){
+                //get publicKey
+                let eth_getEncryptionPublicKey =  await ethereum.request({
+                    method: 'eth_getEncryptionPublicKey',
+                    params: [account],
+                });
+                $(".func1").text(eth_getEncryptionPublicKey)
+            })
+            $(".func2-btn1").on('click',async function(e){
+                //encrypt
+                let encryptMessageInput = $(".func2-input0").val();
+                let encrypt_string = stringifiableToHex(
+                    encrypt_s(
+                        $(".func1").text(),
+                        { data: encryptMessageInput },
+                        'x25519-xsalsa20-poly1305',
+                    ),
+                );
+                $(".func2-output").val(encrypt_string)
+            });
+            $(".func2-btn2").on('click',async function(e){
+                 //clear
+                $(".func2-input0").val("");
+                $(".func2-output").val("");
+                
+            });
+            $(".func2-btn3").on('click',async function(e){
+                let encryptKey =  $(".func2-output").val()
+                console.log(encryptKey)
+                if(encryptKey!=""){
+                   let result =  await personalIdentityInstance.methods.setEncryptMaterial("HLFPrivateKey", encryptKey).send({from: account})
+                   console.log(result.transactionHash)
+                }
+            })
+            $(".func3").on('click',async function(e){
+                console.log(3)
+            })
+
+        }
+        async function main() {
+            let accounts = await web3.eth.getAccounts();
+            account = accounts[0];
+            $("#identityId").val(IDNumber)
+            $("#address").val(account)//PersonalIdentity.json
+            identityManagerABI = await fetch("/contracts/IdentityManager.json");
+            personalIdentityABI = await fetch("/contracts/PersonalIdentity.json")
+            identityManagerABI = await identityManagerABI.json()
+            identityManagerABI = identityManagerABI.abi
+            personalIdentityABI = await personalIdentityABI.json()
+            personalIdentityABI = personalIdentityABI.abi
+            buildListener();
+        }
+        main();
+    </script>
+<%- include('footer') -%>

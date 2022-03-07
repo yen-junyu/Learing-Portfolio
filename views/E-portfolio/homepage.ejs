@@ -1,0 +1,97 @@
+<html>
+  <body>
+    <h2>Web3 API version</h2>
+    <p id="p1"></p>
+    <h2>My Account</h2>
+    <p id="account"></p>
+    <button id="getEncryptionKeyButton">
+      Get Encryption Key
+    </button>
+    <p>
+      Encryption key: <span id="encryptionKeyDisplay"></span>
+    </p>
+    <div id="encrypt-message-form">
+      <input type="text" placeholder="Message to encrypt" id="encryptMessageInput">
+      <button id="encryptButton">
+        Encrypt
+      </button>
+    </div>
+    <p>
+      ciphertext: <span id="ciphertextDisplay"></span>
+    </p>
+
+    <button class="btn btn-primary btn-lg btn-block mb-3" id="decryptButton">
+      Decrypt
+    </button>
+    <p>
+      cleartext: <span id="cleartextDisplay"></span>
+    </p>
+
+    <script src="./js/web3_bundle.js"></script>
+    <script src="./js/bundle.js"></script>
+
+    <script>
+      var account;
+      async function main(){
+      function stringifiableToHex(value) {
+          //return web3.utils.utf8ToHex(value)
+          return ethers.utils.hexlify(Buffer.from(JSON.stringify(value)));
+      }
+      var  accounts = await web3.eth.getAccounts();
+      var  account = accounts[0];
+
+      
+      const getEncryptionKeyButton = document.getElementById('getEncryptionKeyButton');
+      const encryptionKeyDisplay = document.getElementById('encryptionKeyDisplay');
+      const encryptMessageInput = document.getElementById('encryptMessageInput');
+      const ciphertextDisplay = document.getElementById('ciphertextDisplay');
+      const cleartextDisplay = document.getElementById('cleartextDisplay');
+      const decryptButton = document.getElementById('decryptButton');
+      
+
+      getEncryptionKeyButton.onclick = async () => {
+        encryptionKeyDisplay.innerText = await ethereum.request({
+            method: 'eth_getEncryptionPublicKey',
+            params: [account],
+        });
+      };
+      encryptButton.onclick = () => {
+        //console.log(encryptionKeyDisplay.innerText,encryptMessageInput.value)
+        ciphertextDisplay.innerText = stringifiableToHex(
+          encrypt_s(
+            encryptionKeyDisplay.innerText,
+            { data: encryptMessageInput.value },
+            'x25519-xsalsa20-poly1305',
+          ),
+        );
+      };
+
+      decryptButton.onclick = async () => {
+        //console.log(ciphertextDisplay.innerText)
+        cleartextDisplay.innerText = await ethereum.request({
+          method: 'eth_decrypt',
+          params: [ciphertextDisplay.innerText, ethereum.selectedAddress],
+        });
+      };
+    
+        /*
+        accounts = await web3.eth.getAccounts();
+        account = accounts[0];
+        console.log("your account is ", account);
+        //let signature = await web3.eth.sign('hello', account);
+        let signature = web3.eth.personal.sign('e02442d1a56ea87be3bf4e8507d8097781956edaa1ef9c98fde31815ef4bf251',account)
+        console.log(signature)
+        let s = web3.eth.accounts.sign('e02442d1a56ea87be3bf4e8507d8097781956edaa1ef9c98fde31815ef4bf251', '96fb011853ac617950466b2c14cf6b8f1389f7c1ecd36f616a5932f876ec7c16');
+        console.log(s)
+        //var create_account = await web3.eth.accounts.create();
+        //console.log(create_account)
+        //var account = document.getElementById("account");
+        //account.innerHTML = web3.eth.accounts;
+        //console.log(ac)
+        */
+      }
+      main();
+      console.log(account)
+    </script>
+    </body>
+</html>

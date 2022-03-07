@@ -1,0 +1,151 @@
+<%- include('header') -%>
+
+    <body>
+        <% if(info.length){ %>
+            <% if(info=="Created successfully." ){ %>
+                <div class="alert alert-primary">
+                    <%= info %>
+                </div>
+                <% } else { %>
+                    <div class="alert alert-danger">
+                        <%= info %>
+                    </div>
+                    <% } %>
+                        <% } %>
+                            <div class="container mt-2">
+                                <div class="row">
+                                    <div class="col-md-6 center-block offset-md-3">
+                                        <div class="card text-center">
+                                            <div style="font-size: 1.5rem; font-weight:bold" class="card-header">尚未綁定
+                                            </div>
+                                            <div class="card-body">
+                                                <form action="/identityChain/login" method="post">
+                                                    <div class="input-group"><input type="text" name="userName"
+                                                            placeholder="Username" required="required" class="form-control">
+                                                    </div>
+                                                    <div class="input-group mt-3">
+                                                        <div class="input-group">
+                                                            <input type="password" name="IDNumber"
+                                                                placeholder="Identification card number" data-toggle="password" required="required"
+                                                                class="form-control">
+                                                                
+                                                            <div class="input-group-append" style="cursor: pointer;"></div>
+                                                        </div>
+                                                    </div><input type="submit" value="登入" class="btn btn-primary btn-lg btn-block mt-3">
+                                                </form>
+                                                <p class="mt-3 text-left">還無法登入？
+                                                    <a href="#" data-toggle="modal"
+                                                        data-target="#registerModal">立即申請</a>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:10px" class="card text-center">
+                                            <div style="font-size: 1.5rem; font-weight:bold" class="card-header">已完成綁定
+                                            </div>
+                                            <div class="card-body">
+
+                                                <button id="loginWithMetamask"
+                                                    class="btn btn-primary btn-lg btn-block mt-3">
+                                                    使用Metamask登入
+                                                </button>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="registerModal" tabindex="-1" role="dialog" aria-hidden="true"
+                                        class="modal fade">
+                                        <div role="document" class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="card text-center">
+                                                    <div style="font-size: 1.5rem; font-weight:bold"
+                                                        class="card-header">申請<button type="button" data-dismiss="modal"
+                                                            aria-label="Close" class="close"><span
+                                                                aria-hidden="true">×</span></button></div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h5 class="card-title"> </h5>
+                                                    <form action="/identityChain/api/user" method="post">
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend"><span id=""
+                                                                    class="input-group-text">使用者名稱</span>
+                                                            </div><input type="text" name="userName"
+                                                                placeholder="Username" required="required"
+                                                                class="form-control">
+                                                        </div>
+
+                                                        <div class="input-group mt-3">
+                                                            <div class="input-group-prepend"><span id=""
+                                                                    class="input-group-text">出生日期</span>
+                                                            </div><input type="text" name="birth"
+                                                                placeholder="西元/月/日 e.g.1995/11/01" required="required"
+                                                                class="form-control">
+                                                        </div>
+
+                                                        <div class="input-group mt-3">
+                                                            <div class="input-group-prepend"><span id=""
+                                                                    class="input-group-text">電子郵件</span>
+                                                            </div><input type="email" name="email" placeholder="Email"
+                                                                required="required" class="form-control">
+                                                        </div>
+                                                        <div class="input-group mt-3">
+                                                            <div class="input-group-prepend"><span id=""
+                                                                    class="input-group-text">行動電話</span>
+                                                            </div><input type="tel" name="phone"
+                                                                placeholder="Phone number" required="required"
+                                                                class="form-control">
+                                                        </div>
+                                                        <div class="input-group mt-3">
+                                                            <div class="input-group-prepend"><span id=""
+                                                                    class="input-group-text">身份證字號</span>
+                                                            </div><input type="text" name="IDNumber"
+                                                                placeholder="Identification card number"
+                                                                class="form-control">
+                                                        </div><input type="submit" value="申請"
+                                                            class="btn btn-success btn-lg btn-block mt-4">
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                                var account;
+                                var require_signature = "<%= require_signature  %>"
+                                //listener
+                                async function buildListener() {
+                                    window.ethereum.on('accountsChanged', function (accounts) {
+                                        account = accounts[0];
+                                    });
+                                    $("#loginWithMetamask").on('click', async function (e) {
+                                        let result = await web3.eth.personal.sign(require_signature, account);
+                                        $.ajax({
+                                            url: '/identityChain/loginWithMetamask',
+                                            data: {
+                                                identity: "test", // identity
+                                                signature: result,   // signature
+                                                account: account  // account
+                                            },
+                                            type: 'post',
+                                            success: function (res) {
+                                                console.log(res)
+                                                if (res.url)
+                                                    window.location.href = res.url;
+                                            },
+                                            error: function (err) {
+                                                console.log("error");
+                                                alert();
+                                            }
+                                        });
+                                    });
+                                }
+
+                                async function main() {
+                                    let accounts = await web3.eth.getAccounts();
+                                    account = accounts[0];
+                                    buildListener();
+                                }
+                                main();
+                            </script>
+    </body>
+<%- include('footer') -%>
