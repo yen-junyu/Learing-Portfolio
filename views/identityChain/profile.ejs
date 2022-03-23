@@ -1,5 +1,4 @@
 <%- include('header') -%>
-    <body>
         <div class="container mt-2">
             <div class="row">
                 <div class="col-md-8 center-block offset-md-2">
@@ -16,83 +15,132 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>User Name</td>
-                                        <td> <span>
-                                                <%= user.userName %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ID Card</td>
-                                        <td> <span>
-                                                <%= user.IDNumber %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>birth</td>
-                                        <td> <span>
-                                                <%= user.birth %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>email</td>
-                                        <td> <span>
-                                                <%= user.email %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>phone</td>
-                                        <td> <span>
-                                                <%= user.phone %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>hashed</td>
-                                        <td> <span>
-                                                <%= user.hashed %>
-                                            </span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>status</td>
-                                        <td> <span>
-                                                <%= user.status %>
-                                            </span></td>
-                                    </tr>
-                                
-                            <% if(user.address !="0x"){ %>
-                                <tr>
-                                    <td>address</td>
-                                    <td> <span>
-                                            <%= user.address %>
-                                        </span></td>
-                                </tr>
-                                <tr>
-                                    <td>public key</td>
-                                    <td>
-                                        <span class="func1">
-                                        <%  if(user.pubkey !="0x" ){ %>
-                                            <%= user.pubkey %>
+                                    <% if(type=="user" ) {%>
+                                        <tr>
+                                            <td>User Name</td>
+                                            <td>
+                                                <span>
+                                                    <%= user.userName %>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>ID Card</td>
+                                            <td> <span>
+                                                    <%= user.IDNumber %>
+                                                </span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>birth</td>
+                                            <td> <span>
+                                                    <%= user.birth %>
+                                                </span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>email</td>
+                                            <td> <span>
+                                                    <%= user.email %>
+                                                </span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>phone</td>
+                                            <td> <span>
+                                                    <%= user.phone %>
+                                                </span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>hashed</td>
+                                            <td> <span>
+                                                    <%= user.hashed %>
+                                                </span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>status</td>
+                                            <td> <span>
+                                                    <%= user.status %>
+                                                </span></td>
+                                        </tr>
                                         <% }else{ %>
-                                            <button type="button" class="btn btn-primary addpubkey">新增公鑰
-                                            </button>
-                                        <% } %>
-                                        </span>
-                                    </td>
-                                </tr>
-                                
+                                            <tr>
+                                                <td>Organization Name</td>
+                                                <td>
+                                                    <span>
+                                                        <%= user.organizationName %>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>負責人</td>
+                                                <td> <span>
+                                                        <%= user.personInCharge %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>聯絡電話</td>
+                                                <td> <span>
+                                                        <%= user.phone %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>公司電子郵件</td>
+                                                <td> <span>
+                                                        <%= user.email %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>統一編號</td>
+                                                <td> <span>
+                                                        <%= user.UniformNumbers %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>hashed</td>
+                                                <td> <span>
+                                                        <%= user.hashed.substr(10) %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>申請場景 </td>
+                                                <td> <span>
+                                                        <%= user.type %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>status </td>
+                                                <td>
+                                                    <span>
+                                                        <%= user.status %>
+                                                    </span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>public key</td>
+                                                <td>
+                                                    <span>
+                                                        <%= user.pubkey %>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <% } %>
 
-                            <%  } %>
+                                                <% if(user.address !="0x" ){ %>
+                                                    <tr>
+                                                        <td>address</td>
+                                                        <td> <span>
+                                                                <%= user.address %>
+                                                            </span></td>
+                                                    </tr>
+                                                <% } %>
                                 </tbody>
                             </table>
                             <% if(user.address=="0x" && user.status=="true" ){ %>
                                 <button type="button" data-toggle="modal" data-target="#bindModal"
                                     class="btn btn-block btn-info bind-btn">綁定帳號</button>
-                            <% } %>
+                                <% } %>
                         </div>
                     </div>
                 </div>
             </div>
-            <% if(user.address!="0x"){ %>
+            <% if(user.address!="0x" && type == "user"){ %>
                 <div class="row mt-2">
                     <div class="col-md-8 center-block offset-md-2">
                         <div class="card text-center">
@@ -102,37 +150,113 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-4 p-2 mb-2 font-weight-bold">Owner</div>
-                                    <div class="owner col-md-8 p-2 mb-2">0xfa47487bce400de57d0ea526a484dfa7093dbdd6</div>
+                                    <div class="owner col-md-8 p-2 mb-2"></div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 p-2 mb-2 font-weight-bold">Contract address</div>
-                                    <div class="contractAddress col-md-8 p-2 mb-2">0xfa47487bce400de57d0ea526a484dfa7093dbdd6</div>
+                                    <div class="contractAddress col-md-8 p-2 mb-2"></div>
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-md-12 p-2 mb-2 font-weight-bold">Encrypted material</div>
-                                    <div class="col-md-3 p-2 mb-2 font-weight-bold">
-                                        Fabric
+                                    <div class="col-md-12 p-2 mb-2 font-weight-bold">
+                                        <h5>Encrypted material</h4>
                                     </div>
-                                    <div class="col-md-9 p-2 mb-2">
-                                        <div class="input-group mb-3">
-                                            <input type="text" placeholder="Add private key for encryption" aria-label="Parameter" aria-describedby="basic-addon2" class="func2-input0 form-control">
-                                            <div class="input-group-append">
-                                                <button type="button" class="func2-btn1 btn btn-primary">加密</button>
-                                                <button type="button" class="func2-btn2 btn btn-secondary">清除</button>
+                                    <div class="col-md-12 p-2 mb-2">
+                                        You can use the following instructions to create new private key and CSR.
+                                    </div>
+                                    <code class="col-md-12 p-2 mb-2">
+                                        openssl ecparam -name prime256v1 -genkey -noout -out key.pem <br>
+                                        openssl req -new -sha256 -key key.pem -nodes -nodes -out key.csr
+                                    </code>
+                                    <div class="col-md-1"></div>
+                                    <ul class="nav nav-tabs col-md-10" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link active" id="E-portfolio-tab" data-toggle="tab"
+                                                href="#E-portfolio" role="tab" aria-controls="E-portfolio"
+                                                aria-selected="true">E-portfolio</a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" id="Open-Banking-tab" data-toggle="tab"
+                                                href="#Open-Banking" role="tab" aria-controls="Open-Banking"
+                                                aria-selected="false">Open Banking</a>
+                                        </li>
+                                    </ul>
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-1"></div>
+                                    <div class="tab-content col-md-10">
+                                        <div class="tab-pane fade show active" id="E-portfolio" role="tabpanel"
+                                            aria-labelledby="E-portfolio-tab">
+                                            <div class="mt-2 mb-2">
+                                                <code>Encryption operations are performed on the user's local side.</code>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 p-2 mb-2 font-weight-bold">Blockchain framework
+                                                </div>
+                                                <div class="col-md-8 p-2 mb-2">Hyperledger Fabric</div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 p-2 mb-2 font-weight-bold">Private key encryption:</div>
+                                                <div class="col-md-8 p-2 mb-2"></div>
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <div class="custom-file">
+                                                    <input id="privatekey-file" type="file" class="custom-file-input" aria-describedby="privatekey-file">
+                                                    <label class="custom-file-label" for="privatekey-file">Choose your key.pem</label>
+                                                </div>
+                                                <div class="input-group-append">
+                                                    <button type="button" class="key-enc btn btn-primary">加密</button>
+                                                    <button type="button" class="key-clear btn btn-secondary">清除</button>
+                                                </div>
+                                            </div>
+                                            <div class="input-group mb-3">
+                                                <textarea style="resize:none;" class="form-control key-enc-result"
+                                                    aria-label="With textarea" readonly="readonly"
+                                                    placeholder="Encryption result" rows="4"></textarea>
+                                                <div class="input-group-prepend">
+                                                    <button type="button" class="key-upload btn btn-info">上傳</button>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-3 p-2 mb-2 font-weight-bold">CSR encryption:</div>
+                                                <div class="col-md-8 p-2 mb-2"></div>
+                                            </div>
+                                            <select class="form-select form-control" name="org">
+                                                <option value="" disabled selected>Select the organization you want to register </option>
+                                                <option value="E-portfolio">學習歷程</optin>
+                                                <option value="BiomedicalInformation">生醫資料</option>
+                                            </select>
+
+                        
+
+                                            <div class="input-group mb-2 mt-2">
+                                                <!--
+                                                <input type="text" placeholder="paste key.csr file to here"
+                                                    aria-label="Parameter" aria-describedby="basic-addon2"
+                                                    class="func3-input form-control">
+                                                -->
+                                                <div class="custom-file">
+                                                    <input type="file" class="custom-file-input" id="csr-file" aria-describedby="csr-file">
+                                                    <label class="custom-file-label" for="csr-file">Choose your key.csr</label>
+                                                </div>
+                                                <div class="input-group-append">
+                                                    <button type="button" class="csr-enc btn btn-primary">加密</button>
+                                                    <button type="button" class="csr-clear btn btn-secondary">清除</button>
+                                                </div>
+                                            </div>
+                                            <div class="input-group">
+                                                <textarea style="resize:none;" class="form-control csr-enc-result"
+                                                    aria-label="With textarea" readonly="readonly"
+                                                    placeholder="Encryption result" rows="4"></textarea>
+                                                <div class="input-group-prepend">
+                                                    <button type="button" class="func3 btn btn-info">上傳</button>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <div class="input-group mb-3">
-                                            <textarea class="form-control func2-output" aria-label="With textarea" readonly="readonly" placeholder="Encryption result" rows="4"></textarea>
-                                            <div class="input-group-prepend">
-                                                <button type="button" class="func2-btn3 btn btn-info">上傳</button>
-                                            </div>
+                                        <div class="tab-pane fade" id="Open-Banking" role="tabpanel"
+                                            aria-labelledby="Open-Banking-tab">
                                         </div>
-
-                                        <div class="input-group mb-3">
-                                            <input type="text" placeholder="Add CSR for encryption" aria-label="Parameter" aria-describedby="basic-addon2" class="func3-input0 form-control">
-                                        <div class="input-group-append"><button type="button" class="func3 btn btn-info">加入CSR</button></div></div>
+                                    </div>
+                                    <div class="col-md-1"></div>
                                     </div>
                                 </div>
                             </div>
@@ -141,12 +265,11 @@
                 </div>
             <% } %>
         </div>
-
         <div id="bindModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal fade">
             <div role="document" class="modal-dialog">
                 <div class="modal-content">
                     <div class="card text-center">
-                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">帳號綁定<button type="button"
+                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">身份綁定<button type="button"
                                 data-dismiss="modal" aria-label="Close" class="close"><span
                                     aria-hidden="true">×</span></button></div>
                     </div>
@@ -159,64 +282,117 @@
                                     placeholder="Address" required="required" class="form-control" readonly="readonly"
                                     style="background-color: white;">
                             </div>
-                            <div class="input-group mt-3">
-                                <div class="input-group-prepend"><span id="" class="input-group-text">身份證字號</span></div>
-                                <input id="identityId" type="text" name="identityId" placeholder="Identity card ID"
-                                    required="required" class="form-control" readonly="readonly"
-                                    style="background-color: white;">
-                            </div><input type="button" value="送出"
-                                class="btn btn-info btn-lg btn-block mt-4 submit-bind-btn">
+                            <% if(type=="org" ){ %>
+                                <div class="input-group mt-3">
+                                    <div class="input-group-prepend"><span id="" class="input-group-text">統一編號</span>
+                                    </div>
+                                    <input id="identityId" type="text" name="identityId" placeholder="Identity card ID"
+                                        required="required" class="form-control" readonly="readonly"
+                                        style="background-color: white;">
+                                </div>
+                                <div class="input-group mt-3">
+                                    <div class="input-group-prepend"><span id="" class="input-group-text">公鑰</span>
+                                    </div>
+                                    <input id="pubkey" type="text" name="pubkey" placeholder="Public Key"
+                                        required="required" class="form-control" readonly="readonly"
+                                        style="background-color: white;">
+                                    <input type="button" class="addpubkey btn btn-primary" value="新增公鑰">
+                                </div>
+                                <% }else{ %>
+                                    <div class="input-group mt-3">
+                                        <div class="input-group-prepend"><span id=""
+                                                class="input-group-text">身份證字號</span></div>
+                                        <input id="identityId" type="text" name="identityId"
+                                            placeholder="Identity card ID" required="required" class="form-control"
+                                            readonly="readonly" style="background-color: white;">
+                                    </div>
+                                    <% } %>
+
+                                        <input type="button" value="送出"
+                                            class="btn btn-info btn-lg btn-block mt-4 submit-bind-btn">
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-    </body>
     <script>
-        var identityManagerABI,personalIdentityABI;
+        var identityManagerABI, personalIdentityABI;
         var account;
-        var IDNumber = "<%= user.IDNumber  %>"
+        var type = "<%= type %>"
+        var IDNumber;
+
+        if (type == "org") {
+            IDNumber = "<%= user.UniformNumbers  %>"
+        }
+        else {
+            var IDNumber = "<%= user.IDNumber  %>"
+        }
         var contract_address = "<%= contract_address %>"
         var address = "<%= user.address %>"
-        console.log(address)
-        
+
 
         function stringifiableToHex(value) {
-          //return web3.utils.utf8ToHex(value)
-          return ethers.utils.hexlify(Buffer.from(JSON.stringify(value)));
-      }
-        async function buildListener(){
-            var identityManagerInstance = new web3.eth.Contract(identityManagerABI , contract_address);
+            //return web3.utils.utf8ToHex(value)
+            return ethers.utils.hexlify(Buffer.from(JSON.stringify(value)));
+        }
+        async function buildListener() {
+            identityManagerABI = await fetch("/contracts/IdentityManager.json");
+            personalIdentityABI = await fetch("/contracts/PersonalIdentity.json");
+
+            identityManagerABI = await identityManagerABI.json()
+            identityManagerABI = identityManagerABI.abi
+            personalIdentityABI = await personalIdentityABI.json()
+            personalIdentityABI = personalIdentityABI.abi
+
+            var identityManagerInstance = await new web3.eth.Contract(identityManagerABI, contract_address);
+            //console.log(identityManagerInstance)
             var personalIdentityInstance;
 
-            if(address != "0x"){
+            if (address != "0x") {
                 // Set Contract instance
-                let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
-                personalIdentityInstance = new web3.eth.Contract(personalIdentityABI , PIContractAddress);
-                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
-               
+                let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({ from: account });
+                personalIdentityInstance = new web3.eth.Contract(personalIdentityABI, PIContractAddress);
+                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({ from: account })
+
                 $(".owner").text(address);
                 $(".contractAddress").text(PIContractAddress);
-                $(".func2-output").text(encryptKey);
+                $(".key-enc-result").text(encryptKey);
             }
             window.ethereum.on('accountsChanged', function (accounts) {
                 account = accounts[0];
                 $("#address").val(account)
+                $("#pubkey").val("")
             });
             $(".submit-bind-btn").on('click', async function (e) {
                 let address = $("#address").val();
                 let IDNumber = $("#identityId").val();
+                let pubkey = $("#pubkey").val();
+                let data;
+
+                if (pubkey != undefined && pubkey.length == 0) {
+                    alert("please add pubkey.")
+                    return
+                }
+                if (pubkey == undefined) {
+                    data = {
+                        "address": address,
+                        "IDNumber": IDNumber
+                    }
+                }
+                else {
+                    data = {
+                        "address": address,
+                        "IDNumber": IDNumber,
+                        "pubkey": pubkey
+                    }
+                }
                 
                 $.ajax({
                     url: '/identityChain/bindAccount',
-                    data: {
-                        address: address, // identity
-                        IDNumber: IDNumber,   // signature
-                    },
+                    data: data,
                     type: 'post',
                     success: function (res) {
                         alert(res.msg);
-                        //location.reload();
                     },
                     error: function (err) {
                         console.log("error");
@@ -224,58 +400,77 @@
                     }
                 });
             });
-            $(".func1").on('click',async function(e){
+            $(".key-enc").on('click', async function (e) {
+                //encrypt
+                var file = document.getElementById('privatekey-file').files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = async function (evt) {
+                        let { prvKeyHex } = KEYUTIL.getKey(evt.target.result)
+                        let eth_getEncryptionPublicKey = await ethereum.request({
+                            method: 'eth_getEncryptionPublicKey',
+                            params: [account],
+                        });
+                        let encrypt_string = stringifiableToHex(
+                            encrypt_s(
+                            eth_getEncryptionPublicKey,
+                            { data: prvKeyHex },
+                            'x25519-xsalsa20-poly1305',
+                            ),
+                        );
+                        console.log(encrypt_string)
+                        $(".key-enc-result").val(encrypt_string)
+                    }
+                    reader.onerror = function (evt) {
+                        document.getElementById("fileContents").innerHTML = "error reading file";
+                    }
+                }
+            });
+            $(".key-clear").on('click', async function (e) {
+                //clear
+                $(".key-enc-result").val("");
+            });
+            $(".key-upload").on('click', async function (e) {
+                let encryptKey = $(".key-enc-result").val()
+                if (encryptKey != "") {
+                    let result = await personalIdentityInstance.methods.setEncryptMaterial("HLFPrivateKey", encryptKey).send({ from: account })
+                    alert(result.transactionHash);
+                    console.log(result.transactionHash)
+                }
+            })
+
+            $(".func3").on('click', async function (e) {
+                let csr = $(".func3-input").val()
+                let result = await personalIdentityInstance.methods.setEncryptMaterial("HLFCSR", csr).send({ from: account })
+                alert(result.transactionHash);
+            })
+            $(".addpubkey").on('click', async function (e) {
                 //get publicKey
-                let eth_getEncryptionPublicKey =  await ethereum.request({
+                let eth_getEncryptionPublicKey = await ethereum.request({
                     method: 'eth_getEncryptionPublicKey',
                     params: [account],
                 });
-                $(".func1").text(eth_getEncryptionPublicKey)
+                $("#pubkey").val(eth_getEncryptionPublicKey)
             })
-            $(".func2-btn1").on('click',async function(e){
-                //encrypt
-                let encryptMessageInput = $(".func2-input0").val();
-                let encrypt_string = stringifiableToHex(
-                    encrypt_s(
-                        $(".func1").text(),
-                        { data: encryptMessageInput },
-                        'x25519-xsalsa20-poly1305',
-                    ),
-                );
-                $(".func2-output").val(encrypt_string)
-            });
-            $(".func2-btn2").on('click',async function(e){
-                 //clear
-                $(".func2-input0").val("");
-                $(".func2-output").val("");
-                
-            });
-            $(".func2-btn3").on('click',async function(e){
-                let encryptKey =  $(".func2-output").val()
-                console.log(encryptKey)
-                if(encryptKey!=""){
-                   let result =  await personalIdentityInstance.methods.setEncryptMaterial("HLFPrivateKey", encryptKey).send({from: account})
-                   console.log(result.transactionHash)
-                }
+            $("#privatekey-file").on('change',function(e){
+                var fileName = e.target.files[0].name;   
+                $(this).next('.custom-file-label').html(fileName);
             })
-            $(".func3").on('click',async function(e){
-                console.log(3)
+            $("#csr-file").on('change',function(e){
+                var fileName = e.target.files[0].name;   
+                $(this).next('.custom-file-label').html(fileName);
             })
-
         }
         async function main() {
             let accounts = await web3.eth.getAccounts();
             account = accounts[0];
             $("#identityId").val(IDNumber)
-            $("#address").val(account)//PersonalIdentity.json
-            identityManagerABI = await fetch("/contracts/IdentityManager.json");
-            personalIdentityABI = await fetch("/contracts/PersonalIdentity.json")
-            identityManagerABI = await identityManagerABI.json()
-            identityManagerABI = identityManagerABI.abi
-            personalIdentityABI = await personalIdentityABI.json()
-            personalIdentityABI = personalIdentityABI.abi
+            $("#address").val(account)
+
+
             buildListener();
         }
         main();
     </script>
-<%- include('footer') -%>
+    <%- include('footer') -%>

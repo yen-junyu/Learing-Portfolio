@@ -2,11 +2,13 @@ var express = require('express');
 
 var router = express.Router();
 
-const User = require("../../controllers/user.controller");
+const Organization = require("../../controllers/organization.controller");
 
 router.post("/", async function(req,res){
-    let user = await User.create(req.body);
-    if(user){
+    console.log(req.body)
+    let organization = await Organization.create(req.body);
+    
+    if(organization){
         req.flash('info', 'Created successfully.');
         res.redirect('/identityChain/register');
     }
@@ -18,10 +20,4 @@ router.post("/", async function(req,res){
 });
 
 module.exports = router;
-
-// Retrieve all Tutorials
-//router.get("/", token.findAll);
-
-// Delete a Tutorial with id
-//router.delete("/:identity/:org", token.delete);
 

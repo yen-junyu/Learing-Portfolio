@@ -2,52 +2,56 @@ const db = require("../models");
 const ApplyCert = db.applyCert;
 const Op = db.Sequelize.Op;
 
-exports.create = (req, res) => {    
-    const {address,pubkey, activityName, quantity, description, api} = req.body;
-    
-    if (!address || !activityName || !quantity || !description || !api ) {
-        return res.status(400).send({
-            message: "name, quantity, description, api"
-          });
-    }
-    let applyCert = {
-        address : address,
-        pubkey : pubkey,
-        activityName : activityName,
-        quantity : quantity,
-        description : description,
-        api : api,
-        status : "false",
-        pw : "false"
-    }
-    ApplyCert.create(applyCert).then(data => {
-        console.log(data)
-        return res.send(data)
+
+exports.create = async (option) => {
+    return new Promise(async function(resolve,reject){
+       
+        const {account,activityName, number, type, API} = option;
+        if (!account || !activityName || !number || !type || !API ) {
+            reject("lost something.")
+        }
+        
+        let applyCert = {
+            account : account,
+            activityName : activityName,
+            number : number,
+            type : type,
+            API : API,
+            status : "false"
+        }
+        try{
+            applyCert = await ApplyCert.create(applyCert);
+            resolve(applyCert);
+        }
+        catch{
+            reject("create error")
+        }
+        
     })
-    .catch(err => {
-        return res.send("err")
-    });
 }
-exports.findAll = async (req , res) => {
-    let data = await ApplyCert.findAll({ where: true});
-    return  res.send(data)
+exports.findOne = async (option) => {
+    return new Promise(async function(resolve,reject){
+        let applyCert = await ApplyCert.findOne({where:option});
+        resolve(applyCert);
+    })
 }
-exports.update = async (req , res) => {
-    const {address} = req.body;
-    if(!address){
-        return res.status(400).send({
-            message: "address miss"
+exports.update = async (option) => {
+    return new Promise(async function(resolve,reject){
+        const {activityName} = option;
+        if(!activityName){
+            return "missing activityName."
+        }
+        let applyCert = await ApplyCert.findByPk(activityName);
+        applyCert.set({
+            status: "true"
         });
-    }
-    let data = await ApplyCert.findByPk(address);
-    data.set({
-        status: "true",
-    });
-    await data.save();
-    if (data) {
-        return res.send(data);
-    }
-    else {
-        return res.status(500).send("Not found.");
-    }
+        await applyCert.save();
+        resolve(applyCert)
+    })
+}
+exports.findAll = async (option) =>{
+    return new Promise(async function(resolve,reject){
+        let applyCert = await ApplyCert.findAll({where:option});
+        resolve(applyCert);
+    })
 }

@@ -1,0 +1,211 @@
+<%- include('header') -%>
+
+    <body>
+        <div class="container mt-2">
+            <div class="row">
+                <div class="col-md-8 center-block offset-md-2">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            <h4 style="margin:0;" class="font-weight-bold">Profile </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!--
+                                <div class="col-md-2 p-2  font-weight-bold">Owner</div>
+                                <div class="owner col-md-10 p-2 mb-2">
+                                    <%= acc.Owner %>
+                                        <% if(acc.Owner=="0x" ){%>
+                                            <span class="float-right px-2"
+                                                style="color:red; text-decoration: underline dotted; border: solid 1.5px; border-radius: 8px">
+                                                尚未初始化
+                                            </span>
+                                            <% }else{ %>
+                                                <span class="float-right px-2"
+                                                    style="color:green; text-decoration: underline dotted; border: solid 1.5px; border-radius: 8px">
+                                                    創建成功
+                                                </span>
+                                                <% } %>
+                                </div>
+                                 -->
+                                <div class="col-md-2 p-2  font-weight-bold">學校公鑰</div>
+                                <div class="col-md-10 p-2 mb-2">
+                                    <%= acc.OrgPubkey %>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    目前已獲得證書
+                                </div>
+                                <div class="card-body">
+                                    <% for(var i=0; i< acc.Attribute.length ; i++) {%>
+                                        <div class="col-md-2 mt-2 btn btn btn-primary">
+                                            <i class="bi bi-award"></i>
+                                            <%= acc.Attribute[i] %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    待加入證書
+                                </div>
+                                <div class="card-body">
+                                    <% for(var i=0; i< acc.AddAttribute.length ; i++) {%>
+                                        <div class="col-md-2 mt-2 btn btn btn-success" id= <%= acc.AddAttribute[i] %> >
+                                            <i class="bi bi-award"></i>
+                                            <%= acc.AddAttribute[i] %>
+                                        </div>
+                                    <% } %>
+
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 style="margin:0;" class="font-weight-bold">許可操作</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">證書</th>
+                                        <th scope="col">開放組織</th>
+                                        <th scope="col">許可時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">通知</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                    您是否要取得於
+                    <span class="font-weight-bold new-attribute">
+
+                    </span>
+                     獲得的證書
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="confirm btn btn-primary">確認</button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        
+        var identityManagerABI,personalIdentityABI;
+        var account;
+        var contract_address = "<%= contract_address %>"
+        
+        const preventMalleability = (sig, ecdsa) => {
+            const halfOrder = ecdsa.n.shrn(1);
+            if (sig.s.cmp(halfOrder) === 1) {
+                const bigNum = ecdsa.n;
+                sig.s = bigNum.sub(sig.s);
+            }
+            return sig;
+        };
+        function sign(privateKey,digest){
+            const signKey = ecdsa.keyFromPrivate(privateKey, 'hex');
+            const sig = ecdsa.sign(Buffer.from(digest, 'hex'), signKey);
+            var halfOrderSig = preventMalleability(sig, ecdsa);
+            const signature = Buffer.from(halfOrderSig.toDER());
+            var signature_string = ""
+            for(var i=0; i<signature.length ; i++){
+                signature_string += signature[i].toString();
+                signature_string += "/"
+            }
+            signature_string = signature_string.slice(0, -1);
+            return signature_string
+        }
+        function ajaxAwait(url,data) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    dataType: 'json',
+                    data: data,
+                    success: function (res) {
+                        resolve(res)
+                    },
+                    fail: function (xhr, ajaxOptions, thrownError) {
+                        reject(false)
+                    },
+                })
+            })
+        }
+        async function buildListener(){
+            var identityManagerInstance = new web3.eth.Contract(identityManagerABI , contract_address);
+            var personalIdentityAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
+            var personalIdentityInstance =  new web3.eth.Contract(personalIdentityABI , personalIdentityAddress);
+
+            $(".btn-success").on('click',async function(e){
+                var clickedBtnID = $(this).attr('id');
+                $('.new-attribute ').text(clickedBtnID);
+                $('#staticBackdrop').modal('show');
+            });
+            $(".confirm").on('click',async function(e){
+                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
+                let privateKey = await ethereum.request({
+                    method: 'eth_decrypt',
+                    params: [encryptKey, account],
+                });
+                let signature_string,result;
+                
+                let attribute = $('.new-attribute ').text()
+                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_1',{attribute:attribute})
+                signature_string = sign(privateKey,result.digest)
+                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_2',{'signature':signature_string})
+                if(result.status ==200){
+                    console.log(result.msg)
+                }
+                else{
+                    alert("error")
+                }
+                signature_string = sign(privateKey,result.commitDigest)
+                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_3',{'signature':signature_string})
+                if(result.status==200){
+                    alert("發送成功")
+                    location.reload();
+                }
+                else{
+                    alert(result.msg)
+                }
+            })
+        }
+        async function main() {
+            let accounts = await web3.eth.getAccounts();
+            account = accounts[0];
+            identityManagerABI = await fetch("/contracts/IdentityManager.json");
+            personalIdentityABI = await fetch("/contracts/PersonalIdentity.json")
+
+            identityManagerABI = await identityManagerABI.json()
+            identityManagerABI = identityManagerABI.abi
+            personalIdentityABI = await personalIdentityABI.json()
+            personalIdentityABI = personalIdentityABI.abi
+            buildListener();
+        }
+    main();
+    </script>
+    <%- include('footer') -%>

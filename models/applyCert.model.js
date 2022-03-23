@@ -1,25 +1,19 @@
 module.exports = (sequelize, Sequelize) => {
   const applyCert = sequelize.define("applyCert", {
-    address :{
-      type: Sequelize.STRING,
-      primaryKey: true
-    },
-    pubkey : {
+    account :{
       type: Sequelize.STRING,
     },
     activityName: {
+      type: Sequelize.STRING,
+      primaryKey: true
+    },
+    number: {
       type: Sequelize.STRING
     },
-    quantity: {
+    type:{
       type: Sequelize.STRING
     },
-    description: {
-      type: Sequelize.STRING
-    },
-    api: {
-      type: Sequelize.STRING
-    },
-    pw:{
+    API: {
       type: Sequelize.STRING
     },
     status :{

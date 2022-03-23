@@ -1,0 +1,169 @@
+<%- include('header') -%>
+        <% if(info.length){ %>
+            <% if(info=="Created successfully." ){ %>
+                <div class="alert alert-primary">
+                    <%= info %>
+                </div>
+                <% } else { %>
+                    <div class="alert alert-danger">
+                        <%= info %>
+                    </div>
+                    <% } %>
+                        <% } %>
+                            <div class="container mt-2">
+                                <div class="row">
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-10">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <img src="/images/company-enterprise.png" class="card-img-top"
+                                                        alt="...">
+
+                                                    <div class="card-body" style="margin-top:0px;">
+                                                        <h4 class="text-center">法人</h4>
+                                                        <p class="card-text">If you are a company or organization such
+                                                            as high school or equipment supplier want to register on DID
+                                                            chain</p>
+                                                        <button type="submit" value="register" data-toggle="modal" data-target="#OrgRegisterModal"
+                                                            class="btn btn-primary btn-lg btn-block mt-3">register</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <img src="/images/pngwing.com.png" class="card-img-top" alt="...">
+                                                    <div class="card-body">
+                                                        <h4 class="text-center">自然人</h4>
+                                                        <p class="card-text">If you are a general user and want to
+                                                            register on the DID chain.</p>
+                                                        <button type="submit" value="register" data-toggle="modal" data-target="#registerModal"
+                                                            class="btn btn-primary btn-lg btn-block mt-3">register</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                </div>
+                            </div>
+                            <div id="registerModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal fade">
+                                <div role="document" class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="card text-center">
+                                            <div style="font-size: 1.5rem; font-weight:bold" class="card-header">
+                                                申請<button type="button" data-dismiss="modal" aria-label="Close"
+                                                    class="close"><span aria-hidden="true">×</span></button></div>
+                                        </div>
+                                        <div class="card-body">
+                                            <h5 class="card-title"> </h5>
+                                            <form action="/identityChain/api/user" method="post">
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">使用者名稱</span>
+                                                    </div><input type="text" name="userName" placeholder="Username"
+                                                        required="required" class="form-control">
+                                                </div>
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">出生日期</span>
+                                                    </div><input type="text" name="birth"
+                                                        placeholder="西元/月/日 e.g.1995/11/01" required="required"
+                                                        class="form-control">
+                                                </div>
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">電子郵件</span>
+                                                    </div><input type="email" name="email" placeholder="Email"
+                                                        required="required" class="form-control">
+                                                </div>
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">行動電話</span>
+                                                    </div><input type="tel" name="phone" placeholder="Phone number"
+                                                        required="required" class="form-control">
+                                                </div>
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">身份證字號</span>
+                                                    </div><input type="text" name="IDNumber"
+                                                        placeholder="Identification card number" class="form-control">
+                                                </div><input type="submit" value="申請"
+                                                    class="btn btn-success btn-lg btn-block mt-4">
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="OrgRegisterModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal fade">
+                                <div role="document" class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="card text-center">
+                                            <div style="font-size: 1.5rem; font-weight:bold" class="card-header">
+                                                申請<button type="button" data-dismiss="modal" aria-label="Close"
+                                                    class="close"><span aria-hidden="true">×</span></button></div>
+                                        </div>
+                                        <div class="card-body">
+                                            <h5 class="card-title"> </h5>
+
+                                            <form action="/identityChain/api/organization" method="post" id="Org">
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span id=""  class="input-group-text">公司名稱</span>
+                                                    </div>
+                                                    <input type="text" name="organizationName" placeholder="Organization Name"
+                                                        required="required" class="form-control">
+                                                </div>
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">負責人</span>
+                                                    </div>
+                                                    <input type="text" name="personInCharge"
+                                                        placeholder="Person in charge" required="required"
+                                                        class="form-control">
+                                                </div>
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">負責人行動電話</span>
+                                                    </div><input type="tel" name="phone" placeholder="Phone number"
+                                                        required="required" class="form-control">
+                                                </div>
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">公司電子郵件</span>
+                                                    </div><input type="email" name="email" placeholder="Email"
+                                                        required="required" class="form-control">
+                                                </div>
+
+
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                            class="input-group-text">統一編號</span>
+                                                    </div>
+                                                    <input type="text" name="UniformNumbers"
+                                                        placeholder="Uniform Numbers" class="form-control">
+                                                </div>
+                                                <div class="input-group mt-3">
+                                                    <div class="input-group-prepend"><span id=""
+                                                        class="input-group-text">申請場景</span>
+                                                    </div>
+                                                    <select class="form-select form-control" form="Org" name="type">
+                                                        <option value="" disabled selected>Select activity type</option>
+                                                        <option value="E-portfolio">學習歷程</optin>
+                                                        <option value="BiomedicalInformation">生醫資料</option>
+                                                    </select>
+                                                </div>
+
+                                                <input type="submit" value="申請"
+                                                    class="btn btn-success btn-lg btn-block mt-4">
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+    <%- include('footer') -%>

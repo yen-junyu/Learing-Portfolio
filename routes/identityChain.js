@@ -13,8 +13,10 @@ var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 var router = express.Router();
 
 var User = require("../controllers/user.controller");
+var Organization = require("../controllers/organization.controller");
 // sub-router
 var apiUser = require('./identityChain/api.user')
+var apiOrganization = require('./identityChain/api.organization')
 
 var IM = new web3.eth.Contract(identityManger.abi, contract_address);
 //IM.events.AddUserEvent({fromBlock: 14},function(error, event){ console.log(event)})
@@ -29,21 +31,41 @@ var isAuthenticated = function (req, res, next) {
     }
 };
 
-passport.use('local', new LocalStrategy(
+passport.use('user', new LocalStrategy(
     {
         usernameField: 'userName',
         passwordField: 'IDNumber',
         passReqToCallback: true
     },
     async function(req, userName, IDNumber , done){
-        console.log("hello")
         let option = {
             'IDNumber': IDNumber,
             'userName' : userName
         }
         let user = await User.findOne(option);
         if(user){
-            return done(null,{"identity":user.hashed});
+            return done(null,{"identity":user.hashed,"type":"user"});
+        }
+        else{
+            req.flash('info', 'User is not exist.');
+            return done(null,false)
+        }
+    }
+))
+passport.use('org', new LocalStrategy(
+    {
+        usernameField: 'organizationName',
+        passwordField: 'uniformNumber',
+        passReqToCallback: true
+    },
+    async function(req, organizationName, uniformNumber , done){
+        let option = {
+            'organizationName': organizationName,
+            'UniformNumbers' : uniformNumber
+        }
+        let organization = await Organization.findOne(option);
+        if(organization){
+            return done(null,{"identity":organization.hashed , "type":"org"});
         }
         else{
             req.flash('info', 'User is not exist.');
@@ -72,18 +94,30 @@ passport.use('verifySign', new LocalStrategy( {
 ));
 //sub-router (api)
 router.use('/api/user',apiUser);
+router.use('/api/organization',apiOrganization);
 
 router.post('/addUser',async function(req,res){
-    let {IDNumber,userName} = req.body;
-  
-    let option = {
-        'IDNUmber': IDNumber,
-        'userName' : userName,
+    let {type,IDNumber,Name} = req.body;
+    let user;
+    if(type=="person"){
+        let option = {
+            'IDNUmber': IDNumber,
+            'userName' : Name,
+        }
+        user = await User.findOne(option);
     }
-    let user = await User.findOne(option);
+    else{
+        let option = {
+            'UniformNumbers': IDNumber,
+            'organizationName' : Name,
+        }
+        user = await Organization.findOne(option);
+    }
+
+    
     if(!user){
         return res.send({
-            msg: `user ${userName} is not exist.`
+            msg: `user ${Name} is not exist.`
         });
     }
     let hashed = user.hashed
@@ -114,7 +148,7 @@ router.post('/addUser',async function(req,res){
         });
         await user.save();
         return res.send({
-            msg: `${userName}-${receipt.transactionHash}`
+            msg: `${Name}-${receipt.transactionHash}`
         });
     })
     .on('error', function (error) {
@@ -132,13 +166,36 @@ router.post('/addUser',async function(req,res){
     })
 })
 router.post('/bindAccount',isAuthenticated, async function(req,res){
-    let {address,IDNumber} = req.body;
+    let {address,IDNumber,pubkey} = req.body;
+    let type = req.user.type;
+    console.log(pubkey)
     let hashed = req.user.identity;
-    let option = {
-        'IDNUmber': IDNumber,
-        'hashed' : hashed,
+    
+    let user;
+    if(type=="org"){
+        if(pubkey == undefined)
+        {
+            console.log(1244)
+            return res.send({
+                msg: `User is not exist.`
+            })
+            
+        }
+        let option = {
+            'hashed' : hashed,
+        }
+        user = await Organization.findOne(option);
+        console.log(user)
     }
-    let user = await User.findOne(option);
+    else
+    {
+        let option = {
+            'IDNUmber': IDNumber,
+            'hashed' : hashed,
+        }
+        user = await User.findOne(option);
+    }
+    
     if(!user){
         return res.send({
             msg: `User is not exist.`
@@ -168,6 +225,7 @@ router.post('/bindAccount',isAuthenticated, async function(req,res){
     .on('receipt', async function (receipt) {
         user.set({
             address: address,
+            pubkey: pubkey
         });
         await user.save();
         return res.send({
@@ -177,42 +235,52 @@ router.post('/bindAccount',isAuthenticated, async function(req,res){
     .catch((error) => {
         console.log(`Send signed transaction failed.`);
         return res.send({
-            msg:"This address already binded."
+            msg: "This address already binded."
         })
     })
 })
-router.get('/audit',async function(req,res){
-    let option = {"status":"false"};
-    let users = await User.findAll(option);
-    res.render('identityChain/audit.ejs',{'users':users});
-})
-/*
-router.get('/loginFail',async function(req,res){
-    return res.send({'status' : 'bad'});
-})*/
 router.get('/profile',isAuthenticated, async function(req,res){
     let option = {
         'hashed': req.user.identity
     }
-    let user = await User.findOne(option);
-    //console.log(user.address)
-    //if(user.address=="0x")
-    res.render('identityChain/profile.ejs',{'user':user , 'contract_address':contract_address });
+    let user;
+    if(req.user.type=="org"){
+        user = await Organization.findOne(option)
+    }
+    else{
+        user = await User.findOne(option);
+    }
+    res.render('identityChain/profile.ejs',{'user':user ,'type':req.user.type, 'contract_address':contract_address });
 })
 router.post('/loginWithMetamask', passport.authenticate('verifySign', {
     failureRedirect: '/identityChain/loginFail'
 }), function (req, res) {
     res.send({'url':'/identityChain/profile'})
 });
-router.post('/login',passport.authenticate('local',{
+router.post('/login',passport.authenticate('user',{
     failureRedirect: '/identityChain'
 }), async function(req,res){
     res.redirect('/identityChain/profile')
 });
+
+router.post('/loginOrg',passport.authenticate('org',{
+    failureRedirect: '/identityChain'
+}), async function(req,res){
+    res.redirect('/identityChain/profile')
+})
 router.get('/logout', function(req, res) {
     req.logOut();
     res.redirect('/identityChain/');
 });
+
+router.get('/audit',isAuthenticated , async function(req,res){
+    //let option = {"status":"false"};
+    //let users = await User.findAll(option);
+    res.render('identityChain/audit.ejs',{'user':true});
+})
+router.get('/register',async function(req,res){
+    res.render('identityChain/register.ejs',{"info":req.flash('info')});
+})
 router.get('/', async function(req,res){
     if(req.user){
         res.redirect("/identityChain/profile")

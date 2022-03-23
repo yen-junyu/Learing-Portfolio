@@ -1,0 +1,88 @@
+<%- include('header') -%>
+<% if(info.length){ %>
+    <% if(info=="Created successfully." ){ %>
+        <div class="alert alert-primary">
+            <%= info %>
+        </div>
+        <% } else { %>
+            <div class="alert alert-danger">
+                <%= info %>
+            </div>
+            <% } %>
+                <% } %>
+    <body>
+        <div class="container mt-2">
+            <div class="row">
+                <div class="col-md-10 center-block offset-md-1">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            <h4 style="margin:0;" class="font-weight-bold">已申辦活動</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 p-2 mb-2 font-weight-bold">Organazation</div>
+                                <div class="owner col-md-8 p-2 mb-2"><%= user %></div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <% for(var i=0; i< activityList.length ; i++) {%>
+                                    <div class="card col-md-4">
+                                        <div class="card-body">
+                                            <h5 class="card-header">
+                                                <%= activityList[i] %>
+                                            </h5>
+                                            <!--
+                                            <div class="row mt-1">
+                                                <div class="col-md-7 p-2 font-weight-bold">許可組織</div>
+                                                <div class="owner col-md-5 p-2">
+                                                    <%= activityList[i].licenseAgency %>
+                                                </div>
+                                            </div>
+                                            -->
+                                            <a href="#" class="btn btn-primary mt-3" data-toggle="modal" id= <%= activityList[i] %>>Issue</a>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="issueModal" tabindex="-1" role="dialog" aria-hidden="true" class="modal fade">
+            <div role="document" class="modal-dialog">
+                <div class="modal-content">
+                    <div class="card text-center">
+                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">Add attribute for user<button type="button"
+                                data-dismiss="modal" aria-label="Close" class="close"><span
+                                    aria-hidden="true">×</span></button></div>
+                    </div>
+                    <div class="card-body">
+                        <form action="/E-portfolio/educationMinistry/addAttribute" method="post">
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span id="" class="input-group-text">User</span>
+                                </div><input type="text" name="account" placeholder="Enter user account" required="required"
+                                    class="form-control">
+                            </div>
+                            <div class="input-group mt-3">
+                                <div class="input-group-prepend"><span id="" class="input-group-text">Add Attribute Name</span>
+                                </div>
+                                <input type="text"  name="attribute" class="form-control font-weight-bold attributeName" readonly="readonly">
+                                </input>
+                            </div>
+                            <input type="submit" value="送出" class="btn btn-success btn-lg btn-block mt-4">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        $(".btn-primary").on('click',async function(e){
+            var clickedBtnID = $(this).attr('id');
+            //console.log(clickedBtnID)
+            $('.attributeName').val(clickedBtnID)
+            $('#issueModal').modal('show');
+        });
+    </script>
+    <%- include('footer') -%>

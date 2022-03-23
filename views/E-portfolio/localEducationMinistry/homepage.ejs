@@ -29,10 +29,10 @@
             let result = await web3.eth.personal.sign(require_signature, account);
             console.log(result)
             $.ajax({
-                url: '/E-portfolio/highSchool/loginWithMetamask',
+                url: '/E-portfolio/localEducationMinistry/loginWithMetamask',
                 data: {
-                    signature: result,   // signature
-                    account: account  // account
+                    account: account , // account
+                    signature: result  // signature
                 },
                 type: 'post',
                 success: function (result) {

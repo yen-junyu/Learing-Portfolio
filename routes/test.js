@@ -36,14 +36,16 @@ const preventMalleability = (sig, ecdsa) => {
     }
     return sig;
 };
-
+//Users/yanjunyu/Desktop/class/Learing-Portfolio/wallet/highSchool
 async function init(){
     const mspOrg1 = 'Org1MSP';
     ccp = buildCCPOrg1();
     caClient = await buildCAClient(FabricCAServices_1, ccp, 'ca.org1.example.com');
     walletPath = path.join(__dirname,'..', 'wallet');
+    console.log(walletPath)
     wallet = await buildWallet(Wallets, walletPath);
     await enrollAdmin(caClient, wallet, mspOrg1);
+    
     // build admin user
     /*
     await registerAndEnrollUser(caClient, wallet, mspOrg1, 'app_admin', 'org1.department1' ,[
@@ -58,14 +60,19 @@ async function init(){
             identity: 'app_admin',
             discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
         });
+        //console.log("111111111111")
         // admin has private key 
-        /*
+        
         let userJson = await wallet.get('admin');
         let provider = wallet.getProviderRegistry().getProvider(userJson.type);
         let adminUser = await provider.getUserContext(userJson,'admin');
         let adminUserContext = gateway.client.newIdentityContext(adminUser);
-        */
+        
         //network = await gateway.getNetwork('mychannel');
+        //var contract = network.getContract('accessControll');
+        //var result = await contract.submitTransaction('GetIdentity');
+        //var x = await contract.submitTransaction('AddPersonalAccessControll',"0x123");
+        //console.log(x.toString())
         //var contract = network.getContract('chaincode1');
         //var result = await contract.submitTransaction('addOrgAdmin');
         //var result = await contract.submitTransaction('GetAllState');
@@ -78,7 +85,7 @@ async function init(){
         
         //console.log("========================")
         
-        /*
+        
         // user without private key 
         var user = await buildCertUser(wallet,fabric_common , 'maomao2')
         var userContext = gateway.client.newIdentityContext(user).calculateTransactionId()
@@ -116,8 +123,8 @@ async function init(){
         //console.log(commitBytes)
 
         
-        commit.build(adminUserContext);
-        commit.sign(adminUserContext);
+        //commit.build(adminUserContext);
+        //commit.sign(adminUserContext);
         
 
         const commitSendRequest = {};
@@ -155,7 +162,7 @@ async function init(){
 
 
         //console.log(network)
-        */
+        
 
     }
     finally {

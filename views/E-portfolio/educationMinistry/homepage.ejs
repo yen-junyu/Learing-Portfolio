@@ -29,7 +29,7 @@
             let result = await web3.eth.personal.sign(require_signature, account);
             console.log(result)
             $.ajax({
-                url: '/E-portfolio/highSchool/loginWithMetamask',
+                url: '/E-portfolio/educationMinistry/loginWithMetamask',
                 data: {
                     signature: result,   // signature
                     account: account  // account
@@ -40,6 +40,7 @@
                         console.log(result.msg)
                     }
                     else if(result.url){
+                        console.log(result.url)
                         window.location.href = result.url;
                     }
                 },
