@@ -1,9 +1,12 @@
 var Buffer = require('buffer').Buffer
-var elliptic = require('elliptic')
-var {KEYUTIL} = require('jsrsasign');
+var elliptic = require('elliptic');
 var ecies = require("eth-ecies");
 var {encrypt } = require("eth-sig-util")
-var {ethers} = require("ethers")
+var {KEYUTIL} = require('jsrsasign');
+
+const EC = elliptic.ec;
+const ecdsaCurve = elliptic.curves['p256'];
+const ecdsa = new EC(ecdsaCurve);
 
 function encrypt(publicKey, data) {
     let userPublicKey = Buffer.from(publicKey, 'hex');
@@ -12,20 +15,21 @@ function encrypt(publicKey, data) {
     return encryptedData.toString('base64')
 }
 
+
+
+/*
 function decrypt(privateKey, encryptedData) {
     let userPrivateKey = Buffer.from(privateKey, 'hex');
     let bufferEncryptedData = Buffer.from(encryptedData, 'base64');
     let decryptedData = ecies.decrypt(userPrivateKey, bufferEncryptedData);
     
     return decryptedData.toString('utf8');
-}
-
+}*/
 global.window.Buffer = Buffer
-global.window.elliptic = elliptic
-global.window.KEYUTIL= KEYUTIL
-global.window.ecies = ecies
+global.window.ecdsa = ecdsa
 global.window.encrypt_s = encrypt
-global.window.ethers = ethers
+global.window.KEYUTIL = KEYUTIL
+
 
 
 
