@@ -52,7 +52,7 @@ exports.findAll = async (option) =>{
     return new Promise(async function(resolve,reject){
         try{
             let organizations = await Organization.findAll({where:option})
-            resolve(organization)
+            resolve(organizations)
            
         }
         catch{

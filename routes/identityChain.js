@@ -244,13 +244,16 @@ router.get('/profile',isAuthenticated, async function(req,res){
         'hashed': req.user.identity
     }
     let user;
-    if(req.user.type=="org"){
+    let portfolioOrg;
+    if(req.user.type=="org")
+    {
         user = await Organization.findOne(option)
     }
     else{
         user = await User.findOne(option);
+        portfolioOrg =  await Organization.findAll({"type":"E-portfolio"})
     }
-    res.render('identityChain/profile.ejs',{'user':user ,'type':req.user.type, 'contract_address':contract_address });
+    res.render('identityChain/profile.ejs',{'user':user ,'type':req.user.type,'portfolioOrg':portfolioOrg, 'contract_address':contract_address });
 })
 router.post('/loginWithMetamask', passport.authenticate('verifySign', {
     failureRedirect: '/identityChain/loginFail'

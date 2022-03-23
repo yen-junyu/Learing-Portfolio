@@ -220,10 +220,11 @@
                                                 <div class="col-md-3 p-2 mb-2 font-weight-bold">CSR encryption:</div>
                                                 <div class="col-md-8 p-2 mb-2"></div>
                                             </div>
-                                            <select class="form-select form-control" name="org">
+                                            <select class="form-select form-control" id ="portfolioOrg">
                                                 <option value="" disabled selected>Select the organization you want to register </option>
-                                                <option value="E-portfolio">學習歷程</optin>
-                                                <option value="BiomedicalInformation">生醫資料</option>
+                                                <% for(var i=0;i<portfolioOrg.length;i++){ %>
+                                                    <option value="<%= portfolioOrg[i].pubkey %>"><%= portfolioOrg[i].organizationName %></optin>
+                                                <% } %>
                                             </select>
 
                         
@@ -248,7 +249,7 @@
                                                     aria-label="With textarea" readonly="readonly"
                                                     placeholder="Encryption result" rows="4"></textarea>
                                                 <div class="input-group-prepend">
-                                                    <button type="button" class="func3 btn btn-info">上傳</button>
+                                                    <button type="button" class="csr-upload btn btn-info">上傳</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -307,7 +308,6 @@
                                             readonly="readonly" style="background-color: white;">
                                     </div>
                                     <% } %>
-
                                         <input type="button" value="送出"
                                             class="btn btn-info btn-lg btn-block mt-4 submit-bind-btn">
                         </form>
@@ -353,10 +353,12 @@
                 let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({ from: account });
                 personalIdentityInstance = new web3.eth.Contract(personalIdentityABI, PIContractAddress);
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({ from: account })
+                let encryptCsr = await personalIdentityInstance.methods.getEncryptMaterial("HLFCSR").call({ from: account })
 
                 $(".owner").text(address);
                 $(".contractAddress").text(PIContractAddress);
                 $(".key-enc-result").text(encryptKey);
+                $(".csr-enc-result").text(encryptCsr);
             }
             window.ethereum.on('accountsChanged', function (accounts) {
                 account = accounts[0];
@@ -439,12 +441,39 @@
                     console.log(result.transactionHash)
                 }
             })
-
-            $(".func3").on('click', async function (e) {
-                let csr = $(".func3-input").val()
-                let result = await personalIdentityInstance.methods.setEncryptMaterial("HLFCSR", csr).send({ from: account })
+            $(".csr-enc").on('click', async function (e) {
+                //encrypt
+                var file = document.getElementById('csr-file').files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.readAsText(file, "UTF-8");
+                    reader.onload = async function (evt) {
+                        
+                        let pubkey = document.getElementById("portfolioOrg").value;
+                        let encrypt_string = stringifiableToHex(
+                            encrypt_s(
+                            pubkey,
+                            { data: evt.target.result },
+                            'x25519-xsalsa20-poly1305',
+                            ),
+                        );
+                        $(".csr-enc-result").val(encrypt_string)
+                    }
+                    reader.onerror = function (evt) {
+                        document.getElementById("fileContents").innerHTML = "error reading file";
+                    }
+                }
+            });
+            $(".csr-clear").on('click', async function (e) {
+                //clear
+                $(".csr-enc-result").val("");
+            });
+            $(".csr-upload").on('click', async function (e) {
+                let enc_csr = $(".csr-enc-result").val()
+                let result = await personalIdentityInstance.methods.setEncryptMaterial("HLFCSR", enc_csr).send({ from: account })
                 alert(result.transactionHash);
             })
+            
             $(".addpubkey").on('click', async function (e) {
                 //get publicKey
                 let eth_getEncryptionPublicKey = await ethereum.request({
@@ -453,6 +482,8 @@
                 });
                 $("#pubkey").val(eth_getEncryptionPublicKey)
             })
+
+
             $("#privatekey-file").on('change',function(e){
                 var fileName = e.target.files[0].name;   
                 $(this).next('.custom-file-label').html(fileName);
