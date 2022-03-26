@@ -35,16 +35,14 @@ exports.findOne = async (option) => {
         resolve(applyCert);
     })
 }
-exports.update = async (option) => {
+exports.update = async (option, updateValue) => {
     return new Promise(async function(resolve,reject){
         const {activityName} = option;
         if(!activityName){
             return "missing activityName."
         }
         let applyCert = await ApplyCert.findByPk(activityName);
-        applyCert.set({
-            status: "true"
-        });
+        applyCert.set(updateValue);
         await applyCert.save();
         resolve(applyCert)
     })

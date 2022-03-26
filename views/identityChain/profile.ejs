@@ -316,26 +316,25 @@
             </div>
         </div>
     <script>
-        var identityManagerABI, personalIdentityABI;
         var account;
-        var type = "<%= type %>"
         var IDNumber;
-
+        var type = "<%= type %>"
+        var contract_address = "<%= contract_address %>"
+        var address = "<%= user.address %>"
+       
         if (type == "org") {
             IDNumber = "<%= user.UniformNumbers  %>"
         }
         else {
-            var IDNumber = "<%= user.IDNumber  %>"
+            IDNumber = "<%= user.IDNumber  %>"
         }
-        var contract_address = "<%= contract_address %>"
-        var address = "<%= user.address %>"
-
-
+        
         function stringifiableToHex(value) {
             //return web3.utils.utf8ToHex(value)
             return ethers.utils.hexlify(Buffer.from(JSON.stringify(value)));
         }
         async function buildListener() {
+            var identityManagerABI, personalIdentityABI;
             identityManagerABI = await fetch("/contracts/IdentityManager.json");
             personalIdentityABI = await fetch("/contracts/PersonalIdentity.json");
 
@@ -345,16 +344,20 @@
             personalIdentityABI = personalIdentityABI.abi
 
             var identityManagerInstance = await new web3.eth.Contract(identityManagerABI, contract_address);
-            //console.log(identityManagerInstance)
             var personalIdentityInstance;
 
             if (address != "0x") {
+                // already bind
+
                 // Set Contract instance
                 let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({ from: account });
                 personalIdentityInstance = new web3.eth.Contract(personalIdentityABI, PIContractAddress);
+
+                // Get encrypt value from chain
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({ from: account })
                 let encryptCsr = await personalIdentityInstance.methods.getEncryptMaterial("HLFCSR").call({ from: account })
 
+                //set PI value 
                 $(".owner").text(address);
                 $(".contractAddress").text(PIContractAddress);
                 $(".key-enc-result").text(encryptKey);
@@ -473,7 +476,6 @@
                 let result = await personalIdentityInstance.methods.setEncryptMaterial("HLFCSR", enc_csr).send({ from: account })
                 alert(result.transactionHash);
             })
-            
             $(".addpubkey").on('click', async function (e) {
                 //get publicKey
                 let eth_getEncryptionPublicKey = await ethereum.request({
@@ -496,9 +498,10 @@
         async function main() {
             let accounts = await web3.eth.getAccounts();
             account = accounts[0];
+
+            // set modal content ... 
             $("#identityId").val(IDNumber)
             $("#address").val(account)
-
 
             buildListener();
         }

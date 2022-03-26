@@ -24,11 +24,13 @@ var Mapping = require("../../controllers/mapping.controller")
 //fabric SDK and Util
 var { Gateway, Wallets} = require('fabric-network');
 var { buildCAClient, registerAndEnrollUser, enrollAdmin ,getAdminIdentity , buildCertUser} = require('../../Util/CAUtil.js');
-var { buildCCPOrg1, buildWallet } = require('../../Util/AppUtil.js');
+var { buildCCPOrg3, buildWallet } = require('../../Util/AppUtil.js');
 var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
+const e = require('express');
 
 var caClient,wallet;
-var gateway,network,certInstance;
+var gateway,certChannel,certInstance,awardInstance;
+
 var require_signature = "LEM"
 
 passport.use('LEM_local', new LocalStrategy( {
@@ -50,35 +52,32 @@ async function init(){
     // initial some object
 
     //build ca client
-    let ccp = buildCCPOrg1();
-    caClient = await buildCAClient(FabricCAServices_1, ccp, 'ca.org1.example.com');
+    let ccp = buildCCPOrg3();
+    caClient = await buildCAClient(FabricCAServices_1, ccp, 'ca.org3.example.com');
 
     //build wallet to store cert
     let walletPath = path.join(__dirname, '..', '..' ,'wallet','localEducatuinMinistry');
-
     wallet = await buildWallet(Wallets, walletPath);
     
     //enroll ca admin 
-    let mspOrg1 = 'Org1MSP';
-    await enrollAdmin(caClient, wallet, mspOrg1);
-
-    //get ca admin to register and enroll user
-    //adminUser = await getAdminIdentity(caClient,wallet)
+    let mspOrg3 = 'Org3MSP';
+    await enrollAdmin(caClient, wallet, mspOrg3);
 
     //register and enroll app admin (need admin attribute)
-    await registerAndEnrollUser(caClient, wallet, mspOrg1, 'localEducatuinMinistry', 'org1.department1' ,null, 'admin');
+    await registerAndEnrollUser(caClient, wallet, mspOrg3, 'TaipeiDepartmentofEducation', 'org1.department1' ,null, 'admin');
 
     //create Gateway to connect to peer
     gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet,
-        identity: 'localEducatuinMinistry',
+        identity: 'TaipeiDepartmentofEducation',
         discovery: { enabled: true, asLocalhost: true }, // using asLocalhost as this gateway is using a fabric network deployed locally
         
     });
-    network = await gateway.getNetwork('mychannel');
-    certInstance = await network.getContract('cert');
-    
+    certChannel = await gateway.getNetwork('cert-channel');
+    certInstance = await certChannel.getContract('certManager');
+    certInstance = certChannel.getContract('certManager');
+    awardInstance = certChannel.getContract('issueAward');
 }
 init();
 
@@ -87,7 +86,7 @@ let isAuthenticated = function (req, res, next) {
         next();
     }
     else {
-        return res.redirect("/E-portfolio/educationMinistry/")
+        return res.redirect("/E-portfolio/localEducationMinistry/")
     }
 };
 let isAdmin = function (req ,res, next){
@@ -100,7 +99,6 @@ let isAdmin = function (req ,res, next){
         return res.redirect("/E-portfolio/localEducationMinistry/")
     }
 }
-
 
 router.post("/loginWithMetamask",async function(req,res,next){
     let {account,signature} = req.body
@@ -115,6 +113,53 @@ router.post("/loginWithMetamask",async function(req,res,next){
     next()
 },passport.authenticate('LEM_local'),async function(req,res){
     res.send({url: "/E-portfolio/localEducationMinistry/applyCert"})
+})
+router.post("/addAttribute", isAuthenticated, async function(req,res){
+    
+    let {userAddress, attribute} = req.body;
+    let {identity} = req.user;
+
+    //confirm identity has right to addAttribute
+    let responseBuffer = await certInstance.evaluateTransaction('get', identity + attribute);
+    let response = JSON.parse(responseBuffer.toString())
+    let activityInfo;
+
+    if(response.success){
+        activityInfo = JSON.parse(response.success)
+        console.log(activityInfo)
+    }
+    else
+    {
+        req.flash('info', 'Permission denied.');
+        return res.redirect('/E-portfolio/localEducationMinistry/addAttribute');
+    }
+    
+    //execute AddAttributeForUser
+   
+    try{ 
+        let resultBuffer = await awardInstance.submitTransaction('IssueAwardForUser', identity, attribute, userAddress);
+        let result = JSON.parse(resultBuffer.toString());
+        console.log(result)
+        req.flash('info', 'Add Successfully.');
+    }
+    catch(e){
+        console.log(e)
+        req.flash('info', 'Add failed.');
+    }
+
+    return res.redirect('/E-portfolio/localEducationMinistry/addAttribute');
+})
+router.get("/addAttribute", isAuthenticated, async function(req,res){
+    
+    let activitys
+    let responseBuffer = await certInstance.evaluateTransaction('get',req.user.identity)
+    let response = JSON.parse(responseBuffer.toString())
+
+    if(response.success){
+        activitys = JSON.parse(response.success)
+    }
+    console.log(activitys)
+    res.render('E-portfolio/localEducationMinistry/addAttribute.ejs',{'activityList':activitys,'info':req.flash('info'),'user':req.user.identity});
 })
 router.post("/applyCert",isAuthenticated, async function(req,res){
     const {activityName,type,number,API} = req.body
@@ -143,16 +188,19 @@ router.get("/applyCert",isAuthenticated, async function(req,res){
     }
     res.render('E-portfolio/localEducationMinistry/applyCert.ejs',{require_signature,'info':req.flash('info'), admin: admin, user: req.user})
 })
-router.post("/consentCert", isAuthenticated, isAdmin, async function(req,res){
+router.post("/consentCert", isAuthenticated, isAdmin, async function(req, res){
     let {organization,activityName} = req.body;
     let applycert = await ApplyCert.findOne({activityName:activityName})
-    console.log(applycert)
+
     if(applycert){
         try{
-            let result = await certInstance.submitTransaction('applyIssueCert',applycert.account,applycert.activityName,applycert.type,applycert.number,applycert.API);
-            await ApplyCert.update({"activityName":activityName});
+            let result = await certInstance.submitTransaction('applyIssueCert', applycert.account, applycert.activityName, applycert.type, applycert.number, applycert.API);
+            console.log(result.toString())
+            await ApplyCert.update(
+                {"activityName": activityName},
+                {"status": "true"}
+            );
             //result = await certInstance.evaluateTransaction('GetState',applycert.account)
-            //console.log(result.toString())
             res.send({"msg":"Successfully."})
         }
         catch(e){
@@ -165,11 +213,11 @@ router.post("/consentCert", isAuthenticated, isAdmin, async function(req,res){
         res.send({"msg":"activity Name is not exist."})
     }
 })
-router.get("/consentCert",isAuthenticated,isAdmin, async function(req,res){
+router.get("/consentCert",isAuthenticated, isAdmin, async function(req, res){
     let applyCerts = await ApplyCert.findAll()
     res.render('E-portfolio/localEducationMinistry/consentCert.ejs',{'info':req.flash('info'),'applyCerts':applyCerts,admin:true,user:req.user })
 })
-router.get("/",async function(req,res){
+router.get("/", async function(req,res){
     res.render('E-portfolio/localEducationMinistry/homepage.ejs',{"require_signature":require_signature,})
 });
 router.get('/logout', function(req, res) {

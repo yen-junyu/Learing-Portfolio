@@ -1,5 +1,5 @@
 <%- include('header') -%>
-<body>
+
     <% if(info.length){ %>
         <% if(info=="Apply successfully." ){ %>
             <div class="alert alert-primary">
@@ -31,7 +31,7 @@
                                 <div class="input-group-prepend"><span id=""
                                     class="input-group-text">活動類型</span>
                                 </div>
-                                <select class="form-select" form="apply" name="type">
+                                <select class="form-control" form="apply" name="type">
                                     <option value="" disabled selected>Select activity type</option>
                                     <option value="contest">競賽</optin>
                                     <option value="cource">課程</option>
@@ -62,5 +62,5 @@
             </div>
         </div>
     </div>
-</body>
+
 <%- include('footer') -%>

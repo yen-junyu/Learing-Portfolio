@@ -1,22 +1,23 @@
 <!doctype html>
 <html lang="en">
-
 <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
-
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+        integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
 </head>
 <script src="/js/web3_bundle.js"></script>
 <script src="/js/bundle.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ"
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+        integrity="sha384-VHvPCCyXqtD5DqJeNxl2dtTyhF78xXNXdkwX1CZeRusQfRKp+tA7hAShOK/B/fQ2"
         crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
         crossorigin="anonymous"></script>
+        
+<body>
 <nav class="navbar navbar-dark bg-primary navbar-expand-lg ">
         <div class="container-fluid"><a href="/E-portfolio/localEducationMinistry" class="navbar-brand">Local Ministry of
                         Education</a><button type="button" data-toggle="collapse" data-target="#navbarNav"
@@ -33,6 +34,12 @@
                                         </li>
                                 <% } %>
                                 <% if(typeof user != "undefined" && user){ %>
+                                        <li class="nav-item">
+                                                <a style="background-color: #1E90FF;border-radius:30px;margin-right:3px;" class="nav-link active" href="/E-portfolio/localEducationMinistry/addAttribute">
+                                                        <i class="bi bi-award-fill"></i>
+                                                        issue     
+                                                </a>
+                                        </li>
                                         <li class="nav-item">
                                                 <a style="background-color: #1E90FF;border-radius:30px;margin-right:3px;" class="nav-link active" href="/E-portfolio/localEducationMinistry/applyCert">
                                                         <i class="bi bi-pencil"></i>

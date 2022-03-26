@@ -14,6 +14,7 @@ var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/iden
 var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
 var contract_address = config.contracts.identityManagerAddress;
 var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
+
 //controller
 var Mapping = require("../../controllers/mapping.controller")
 var router = express.Router();
@@ -22,7 +23,7 @@ var router = express.Router();
 var fabric_common = require("fabric-common");
 var { Gateway, Wallets} = require('fabric-network');
 var { buildCAClient, registerAndEnrollUser, enrollAdmin ,getAdminIdentity , buildCertUser} = require('../../Util/CAUtil.js');
-var { buildCCPOrg1, buildWallet } = require('../../Util/AppUtil.js');
+var { buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../../Util/AppUtil.js');
 var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
 
 //ecdsa
@@ -38,9 +39,10 @@ var hashFunction = cryptoSuite.hash.bind(cryptoSuite)
 
 //global variable 
 var require_signature = "0xnycu";
-var caClient,wallet,adminUser;
-var gateway,network;
-var accInstance;
+var caClient, wallet, adminUser;
+var gatewayOrg2, gatewayOrg3;
+
+var accChannel, accInstance;
 var addAttribte = {};
 
 
@@ -59,31 +61,45 @@ async function init(){
     // initial some object
 
     //build ca client
-    let ccp = buildCCPOrg1();
-    caClient = await buildCAClient(FabricCAServices_1, ccp, 'ca.org1.example.com');
+    let ccpOrg2 = buildCCPOrg2();
+    caClient = await buildCAClient(FabricCAServices_1, ccpOrg2, 'ca.org2.example.com');
 
     //build wallet to store cert
     let walletPath = path.join(__dirname, '..', '..' ,'wallet','highSchool');
     wallet = await buildWallet(Wallets, walletPath);
     
     //enroll ca admin 
-    let mspOrg1 = 'Org1MSP';
-    await enrollAdmin(caClient, wallet, mspOrg1);
+    let mspOrg2 = 'Org2MSP';
+    await enrollAdmin(caClient, wallet, mspOrg2);
+
     //get ca admin to register and enroll user
     adminUser = await getAdminIdentity(caClient,wallet)
 
     //register and enroll app admin (need admin attribute)
-    await registerAndEnrollUser(caClient, wallet, mspOrg1, 'appAdmin', 'org1.department1' ,null, 'admin');
+    await registerAndEnrollUser(caClient, wallet, mspOrg2, 'schoolA', 'org1.department1', null, 'admin');
 
     //create Gateway to connect to peer
-    gateway = new Gateway();
-    await gateway.connect(ccp, {
+    gatewayOrg2 = new Gateway();
+    await gatewayOrg2.connect(ccpOrg2, {
         wallet,
-        identity: 'appAdmin',
-        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+        identity: 'schoolA',
+        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gatewayOrg2 is using a fabric network deployed locally
     });
-    network = await gateway.getNetwork('mychannel');
-    accInstance = network.getContract('accessControl');
+    accChannel = await gatewayOrg2.getNetwork('acc-channel');
+    accInstance = await accChannel.getContract('AccessControlManager');
+
+    let ccpOrg3 = buildCCPOrg3();
+    gatewayOrg3 = new Gateway();
+    await gatewayOrg3.connect(ccpOrg3, {
+        wallet,
+        identity: 'APP_schoolA',
+        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gatewayOrg2 is using a fabric network deployed locally
+    });
+    
+    
+
+
+
 }
 init();
 
@@ -227,7 +243,7 @@ router.post("/addAttribue_1",isAuthenticated,async function(req,res){
     let attribute = req.body.attribute
     //console.log(user)
     var user = await buildCertUser(wallet,fabric_common , req.user.identity);
-    var userContext = gateway.client.newIdentityContext(user)
+    var userContext = gatewayOrg2.client.newIdentityContext(user)
     // create tx 
     var endorsement = network.channel.newEndorsement('accessControl');
     var build_options = { fcn: 'AddAttribute', args: [attribute], generateTransactionId: true }
@@ -256,7 +272,7 @@ router.post("/addAttribue_2",isAuthenticated,async function(req,res){
         
         if(proposalResponses.responses[0].response.status==200){
             let user = await buildCertUser(wallet,fabric_common,req.user.identity);
-            let userContext = gateway.client.newIdentityContext(user)
+            let userContext = gatewayOrg2.client.newIdentityContext(user)
 
             let commit = endorsement.newCommit();
             let commitBytes = commit.build(userContext)
