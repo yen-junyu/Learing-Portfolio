@@ -13,7 +13,10 @@ var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'))
 var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/identityManager.json', 'utf-8'));
 var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
 var contract_address = config.contracts.identityManagerAddress;
+var privateKey = config.org_address.highSchool.privateKey
+
 var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
+
 
 //controller
 var Mapping = require("../../controllers/mapping.controller")
@@ -25,6 +28,11 @@ var { Gateway, Wallets} = require('fabric-network');
 var { buildCAClient, registerAndEnrollUser, enrollAdmin ,getAdminIdentity , buildCertUser} = require('../../Util/CAUtil.js');
 var { buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../../Util/AppUtil.js');
 var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
+
+//encrypt 
+var { ethers } = require("ethers")
+var { decrypt, encrypt } = require("eth-sig-util")
+var crypto = require("crypto");
 
 //ecdsa
 const elliptic = require('elliptic');
@@ -39,6 +47,7 @@ var hashFunction = cryptoSuite.hash.bind(cryptoSuite)
 
 //global variable 
 var require_signature = "0xnycu";
+var mspOrg2 = 'Org2MSP';
 var caClient, wallet, adminUser;
 var gatewayOrg2, gatewayOrg3;
 
@@ -56,6 +65,28 @@ const preventMalleability = (sig, ecdsa) => {
     }
     return sig;
 };
+var awardInstanceListener = async (event) => {
+    const eventInfo = JSON.parse(event.payload.toString());
+
+    if(event.eventName == "IssueAward"){
+        try{
+            //confirm this student in org
+            let result = await Mapping.findOne({pubkey: eventInfo.student});
+            let pubkey = result.dataValues.pubkey
+            let response = await accInstance.submitTransaction("AddAttributeForUser",pubkey,eventInfo.activityName)
+            console.log(response.toString())
+        }
+        catch(e){
+            console.log(e)
+        }
+        
+    }
+    
+	// notice how we have access to the transaction information that produced this chaincode event
+    //const eventTransaction = event.getTransactionEvent();
+    //console.log(eventTransaction.transactionData.actions[0].payload.chaincode_proposal_payload.input.chaincode_spec.input.args[3].toString())
+	//console.log(`*** transaction: ${eventTransaction.transactionId} status:${eventTransaction.status}`);
+}
 
 async function init(){
     // initial some object
@@ -69,7 +100,6 @@ async function init(){
     wallet = await buildWallet(Wallets, walletPath);
     
     //enroll ca admin 
-    let mspOrg2 = 'Org2MSP';
     await enrollAdmin(caClient, wallet, mspOrg2);
 
     //get ca admin to register and enroll user
@@ -87,19 +117,18 @@ async function init(){
     });
     accChannel = await gatewayOrg2.getNetwork('acc-channel');
     accInstance = await accChannel.getContract('AccessControlManager');
-
+    //await accInstance.submitTransaction("Deletekey","041e26667dee0b081371428273abf7aa6995e1443033476fffaa31525262f19915b2188ca7656f394fe22ac8129fd510f673a6d2607347f271f74352dd5d582279")
+    //=========================
     let ccpOrg3 = buildCCPOrg3();
     gatewayOrg3 = new Gateway();
     await gatewayOrg3.connect(ccpOrg3, {
         wallet,
         identity: 'APP_schoolA',
-        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gatewayOrg2 is using a fabric network deployed locally
+        discovery: { enabled: true, asLocalhost: true } 
     });
-    
-    
-
-
-
+    certChannel = await gatewayOrg3.getNetwork('cert-channel');
+    awardInstance = certChannel.getContract('issueAward');
+    await awardInstance.addContractListener(awardInstanceListener);
 }
 init();
 
@@ -131,14 +160,14 @@ passport.use('local',new LocalStrategy({
         }
     }
 ))
-router.get("/profile",isAuthenticated ,async function(req,res){
+router.get("/profile", isAuthenticated, async function(req,res){
     console.log(req.user)
     let acc = await accInstance.evaluateTransaction('GetUserAccControl',req.user.pubkey);
     let accJson = JSON.parse(acc)
     console.log(accJson)
     return res.render("E-portfolio/highSchool/profile.ejs",{"acc":accJson,"contract_address":contract_address,"user":req.user.identity})
 })
-router.get("/delete",async function(req,res){
+router.get("/delete", async function(req,res){
     let r = await accInstance.submitTransaction('Deletekey','0410dee8185f58c25565b47db7e822c188cc7d3b6b9bce1a1907e76dfb3271db317737015cb70b7e1df8459ae285a3edd36df1d12ad3c8a8d689522acc2e034fe1');
     //console.log(r.toString())
     //let r = await accInstance.submitTransaction('GetUserAccControl','0410dee8185f58c25565b47db7e822c188cc7d3b6b9bce1a1907e76dfb3271db317737015cb70b7e1df8459ae285a3edd36df1d12ad3c8a8d689522acc2e034fe1');
@@ -160,75 +189,89 @@ async function(req,res,next){
         return res.send({'msg':'Failed to verify signature'});
     }
     let identityManagerInstance = new web3.eth.Contract(identityManager.abi, contract_address);
-    let DID = await identityManagerInstance.methods.getId().call({from: account})
+    let DID = await identityManagerInstance.methods.getId().call({from: account});
 
     if(DID){
-        let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
-        personalIdentityInstance = new web3.eth.Contract(personalIdentity.abi , PIContractAddress);
-        let CSR = await personalIdentityInstance.methods.getEncryptMaterial("HLFCSR").call({from: account})
-        let CSRDecode = await opensslDecode(Buffer.from(CSR))
-
-        // Decode CSR to get CN and pubkey.
-        let CN = CSRDecode.substr(CSRDecode.indexOf('CN=')+3,account.length);
-        let start_index = '-----BEGIN PUBLIC KEY-----'.length 
-        let end_index = CSRDecode.indexOf('-----END PUBLIC KEY-----')
-        let pubkey_base64 = CSRDecode.substring(start_index,end_index).replace(/\n/g,'');
-        let pubkey_hex = Buffer.from(pubkey_base64, 'base64').toString('hex');
-
-        // exist useless prefix 3059301306072a8648ce3d020106082a8648ce3d030107034200
-        pubkey_hex = pubkey_hex.substr('3059301306072a8648ce3d020106082a8648ce3d030107034200'.length)
-        let accExist = await accInstance.evaluateTransaction('UserAccControlExist',pubkey_hex);
-        
-        if(accExist.toString()!="false"){
+        var pubkey;
+        try{
+            //Confirm from DB that the user has logged in
+            let result = await Mapping.findOne({address: account.toLowerCase()});
+            pubkey = result.dataValues.pubkey
+        }
+        catch{
+            pubkey = null
+        }
+       
+        if(pubkey){
             req.hashed = DID;
-            req.pubkey = pubkey_hex;
+            req.pubkey = pubkey;
             next();
         }
-        else if(CN.toUpperCase()== account.toUpperCase()){
-            
-            // access control is not exist create one (in ethereum address store lowerCase in ledger.)
-            try{
-                // if first login this app.
-                let attrs = [
-                    {'name': 'category', 'value': 'student', 'ecert':true }
-                ]
-                let secret = await caClient.register({
-                    affiliation: 'org1.department1',
-                    enrollmentID: CN,
-                    role: 'client',
-                    attrs: attrs,
-                }, adminUser);
-                let enrollment = await caClient.enrollWithCSR({'csr':CSR ,'enrollmentID':CN , 'enrollmentSecret': secret})
-                const x509Identity = {
-                    credentials: {
-                        certificate: enrollment.certificate,
-                    },
-                    mspId: 'Org1MSP',
-                    type: 'X.509',
-                };
-
-                await wallet.put(CN, x509Identity);
-                console.log('\x1b[33m%s\x1b[0m', "create x509 cert successfully.");  
-            }
-            catch(e){
-                console.log("already register in ca")
-                //return res.send({'msg':'CN and account are different.'});
-            }
-            //Create access control on app chain
-            try{
-                var result = await accInstance.submitTransaction('AddPersonalAccessControl',pubkey_hex);
-                console.log('\x1b[33m%s\x1b[0m',result.toString());
-                var mapping = await Mapping.create({address:account.toLowerCase(),pubkey:pubkey_hex});
-                req.hashed = DID;
-                req.pubkey = pubkey_hex;
-                next();
-            }
-            catch(e){
-                return res.send({'msg':'create acc error.'});
-            }
-        }
         else{
-            return res.send({'msg':'CN and account are different.'});
+            // access control is not exist create one (in ethereum address store lowerCase in ledger.)
+            let PIContractAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
+            let personalIdentityInstance = new web3.eth.Contract(personalIdentity.abi, PIContractAddress);
+            let EncryptCSRHex = await personalIdentityInstance.methods.getEncryptMaterial("HLFCSR").call({from: account})
+            let EncryptCSR = JSON.parse(ethers.utils.toUtf8String(EncryptCSRHex))
+            let CSR = decrypt(EncryptCSR, privateKey)
+            let CSRDecode = await opensslDecode(Buffer.from(CSR))
+
+            // Decode CSR to get CN and pubkey.
+            let CN = CSRDecode.substr(CSRDecode.indexOf('CN=')+3,account.length);
+            let start_index = '-----BEGIN PUBLIC KEY-----'.length 
+            let end_index = CSRDecode.indexOf('-----END PUBLIC KEY-----')
+            let pubkey_base64 = CSRDecode.substring(start_index,end_index).replace(/\n/g,'');
+            let pubkey_hex = Buffer.from(pubkey_base64, 'base64').toString('hex');
+            // exist useless prefix 3059301306072a8648ce3d020106082a8648ce3d030107034200
+            pubkey_hex = pubkey_hex.substr('3059301306072a8648ce3d020106082a8648ce3d030107034200'.length)
+            
+            console.log(pubkey_hex)
+            //check CN and account
+            if(CN.toLowerCase()== account.toLowerCase()){
+                try{
+                    // if first login this app.
+                    let attrs = [
+                        {'name': 'category', 'value': 'student', 'ecert':true }
+                    ]
+                    let secret = await caClient.register({
+                        affiliation: 'org1.department1',
+                        enrollmentID: CN,
+                        role: 'client',
+                        attrs: attrs,
+                    }, adminUser);
+                    let enrollment = await caClient.enrollWithCSR({'csr':CSR ,'enrollmentID':CN , 'enrollmentSecret': secret})
+                    const x509Identity = {
+                        credentials: {
+                            certificate: enrollment.certificate,
+                        },
+                        mspId: mspOrg2,
+                        type: 'X.509',
+                    };
+    
+                    await wallet.put(CN, x509Identity);
+                    console.log('\x1b[33m%s\x1b[0m', "create x509 cert successfully.");  
+                }
+                catch(e){
+                    console.log("already register in ca")
+                }
+                //Create access control on app chain
+                try{
+                    //var result = await accInstance.submitTransaction('AddPersonalAccessControl', pubkey_hex);
+                    console.log('\x1b[33m%s\x1b[0m',result.toString());
+                    var mapping = await Mapping.create({address:account.toLowerCase(), pubkey:pubkey_hex});
+                    req.hashed = DID;
+                    req.pubkey = pubkey_hex;
+                    next();
+                }
+                catch(e){
+                    return res.send({'msg':'create acc error.'});
+                }
+                
+            }
+            else{
+                console.log("CN and account are different.")
+                return res.send({'msg':'CN and account are different.'});
+            }
         }
     }
     else{
@@ -245,7 +288,7 @@ router.post("/addAttribue_1",isAuthenticated,async function(req,res){
     var user = await buildCertUser(wallet,fabric_common , req.user.identity);
     var userContext = gatewayOrg2.client.newIdentityContext(user)
     // create tx 
-    var endorsement = network.channel.newEndorsement('accessControl');
+    var endorsement = accChannel.channel.newEndorsement('AccessControlManager');
     var build_options = { fcn: 'AddAttribute', args: [attribute], generateTransactionId: true }
     var proposalBytes = endorsement.build(userContext, build_options);
     addAttribte[req.user.identity] = endorsement
@@ -253,12 +296,12 @@ router.post("/addAttribue_1",isAuthenticated,async function(req,res){
 
     return res.send({'digest':digest})
 })
-
 router.post("/addAttribue_2",isAuthenticated,async function(req,res){
+    
     if(addAttribte[req.user.identity]){
         let {signature} = req.body;
         let endorsement = addAttribte[req.user.identity]
-
+        
         signature = signature.split("/");
         let signature_array = new Uint8Array(signature.length);
         for(var i=0;i<signature.length;i++){
@@ -267,7 +310,8 @@ router.post("/addAttribue_2",isAuthenticated,async function(req,res){
         let signature_buffer = Buffer.from(signature_array)
         
         endorsement.sign(signature_buffer);
-        const proposalResponses = await endorsement.send({ targets: network.channel.getEndorsers() });
+        console.log(accChannel.channel.getEndorsers())
+        const proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() });
         let result = proposalResponses.responses[0].response.payload.toString();
         
         if(proposalResponses.responses[0].response.status==200){
@@ -302,7 +346,7 @@ router.post("/addAttribue_3",isAuthenticated,async function(req,res){
 
         const commitSendRequest = {};
         commitSendRequest.requestTimeout = 300000
-        commitSendRequest.targets = network.channel.getCommitters();
+        commitSendRequest.targets = accChannel.channel.getCommitters();
         const commitResponse = await commit.send(commitSendRequest);
 
         if(commitResponse['status']=="SUCCESS"){

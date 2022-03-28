@@ -131,6 +131,7 @@
             const sig = ecdsa.sign(Buffer.from(digest, 'hex'), signKey);
             var halfOrderSig = preventMalleability(sig, ecdsa);
             const signature = Buffer.from(halfOrderSig.toDER());
+            console.log(signature)
             var signature_string = ""
             for(var i=0; i<signature.length ; i++){
                 signature_string += signature[i].toString();

@@ -117,6 +117,7 @@ router.post("/loginWithMetamask",async function(req,res,next){
 router.post("/addAttribute", isAuthenticated, async function(req,res){
     
     let {userAddress, attribute} = req.body;
+    console.log(userAddress)
     let {identity} = req.user;
 
     //confirm identity has right to addAttribute
@@ -135,7 +136,6 @@ router.post("/addAttribute", isAuthenticated, async function(req,res){
     }
     
     //execute AddAttributeForUser
-   
     try{ 
         let resultBuffer = await awardInstance.submitTransaction('IssueAwardForUser', identity, attribute, userAddress);
         let result = JSON.parse(resultBuffer.toString());

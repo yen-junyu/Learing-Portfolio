@@ -21,8 +21,8 @@ const db = require("./models");
 // If you don't want to drop, leave empty.
 db.sequelize.sync();
 
-
-/*db.sequelize.sync({ force: true }).then( () => {
+/*
+db.sequelize.sync({ force: true }).then( () => {
     console.log('\x1b[36m%s\x1b[0m', 'Drop and re-sync db.');  //cyan
 });*/
 

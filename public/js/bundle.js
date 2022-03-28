@@ -46393,6 +46393,8 @@ const ecdsaCurve = elliptic.curves['p256'];
 const ecdsa = new EC(ecdsaCurve);
 
 function encrypt(publicKey, data) {
+    console.log(publicKey)
+    console.log(data)
     let userPublicKey = Buffer.from(publicKey, 'hex');
     let bufferData = Buffer.from(data);
     let encryptedData = ecies.encrypt(userPublicKey, bufferData);

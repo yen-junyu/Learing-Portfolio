@@ -343,6 +343,8 @@
             personalIdentityABI = await personalIdentityABI.json()
             personalIdentityABI = personalIdentityABI.abi
 
+            console.log(personalIdentityABI,identityManagerABI)
+            
             var identityManagerInstance = await new web3.eth.Contract(identityManagerABI, contract_address);
             var personalIdentityInstance;
 
@@ -453,10 +455,9 @@
                     reader.onload = async function (evt) {
                         
                         let pubkey = document.getElementById("portfolioOrg").value;
+                        console.log(pubkey)
                         let encrypt_string = stringifiableToHex(
-                            encrypt_s(
-                            pubkey,
-                            { data: evt.target.result },
+                            encrypt_s( pubkey,{ data: evt.target.result },
                             'x25519-xsalsa20-poly1305',
                             ),
                         );
