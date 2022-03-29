@@ -165,7 +165,6 @@
             const sig = ecdsa.sign(Buffer.from(digest, 'hex'), signKey);
             var halfOrderSig = preventMalleability(sig, ecdsa);
             const signature = Buffer.from(halfOrderSig.toDER());
-            console.log(signature)
             var signature_string = ""
             for(var i=0; i<signature.length ; i++){
                 signature_string += signature[i].toString();
@@ -197,8 +196,13 @@
             $(".authorize").on('click',async function(e){
                 $('#authorizeModal').modal('show');
             })
-            
+            $(".receiveAward").on('click',async function(e){
+                var clickedBtnID = $(this).attr('id');
+                $('.new-attribute ').text(clickedBtnID);
+                $('#receiveAward').modal('show');
+            });
             $(".authorize-submit").on('click',async function(e){
+                //frontend check parameter
                 let orgPubkey = $("#orgPubkey").val();
                 if(orgPubkey==""){
                     return alert("Pubkey is empty.")
@@ -211,15 +215,15 @@
                 if(attributes.length==0){
                     return alert("Select at least one sharing attribute.")
                 }
-
-                let result;
-                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_1',{
+                //start to create tx
+                let response, result;
+                response = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation',{
                     orgPubkey : orgPubkey,
                     attributes : attributes
                 })
-                console.log(result)
-                if(!result.digest){
-                    return alert(`Attribute ${result.error} doesn't exist.`)
+                console.log(response)
+                if(response.error){
+                    return alert(`error :${response.result}`)
                 }
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
                 let privateKey = await ethereum.request({
@@ -227,19 +231,22 @@
                     params: [encryptKey, account],
                 });
                 let signature_string;
-                signature_string = sign(privateKey, result.digest)
-                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_2',{'signature':signature_string})
-                if(!result.commitDigest){
-                    return alert(`${result.msg}.`)
+                signature_string = sign(privateKey, response.digest)
+                response = await ajaxAwait('/E-portfolio/highSchool/proposalAndCreateCommit',{'signature':signature_string ,'func':'PermissionOperation'})
+                if(response.error){
+                    return alert(`error :${response.result}`)
                 }
-                signature_string = sign(privateKey,result.commitDigest)
-                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_3',{'signature':signature_string})
+                result = response.result;
+                signature_string = sign(privateKey,response.commitDigest)
+                response = await ajaxAwait('/E-portfolio/highSchool/commitSend',{'signature':signature_string ,'func':'PermissionOperation'})
+                if(response.error){
+                    return alert(`error: ${response.result}`)
+                }
+                // what the fuck alert?!
+                if(alert(`${result}`)){}
+                else window.location.reload(); 
             })
-            $(".receiveAward").on('click',async function(e){
-                var clickedBtnID = $(this).attr('id');
-                $('.new-attribute ').text(clickedBtnID);
-                $('#receiveAward').modal('show');
-            });
+            
             
             $(".confirm").on('click',async function(e){
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
@@ -247,27 +254,27 @@
                     method: 'eth_decrypt',
                     params: [encryptKey, account],
                 });
-                let signature_string,result;
-                
+                let signature_string, response;
                 let attribute = $('.new-attribute ').text()
-                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_1',{attribute:attribute})
-                signature_string = sign(privateKey,result.digest)
-                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_2',{'signature':signature_string})
-                if(result.status ==200){
-                    console.log(result.msg)
+                response = await ajaxAwait('/E-portfolio/highSchool/addAttribue',{attribute:attribute})
+                if(response.error){
+                    return alert(`error :${response.result}`)
                 }
-                else{
-                    alert("error")
+                signature_string = sign(privateKey,response.digest)
+                response = await ajaxAwait('/E-portfolio/highSchool/proposalAndCreateCommit',{'signature':signature_string,'func':'AddAttribute'})
+                if(response.error){
+                    return alert(`error :${response.result}`)
                 }
-                signature_string = sign(privateKey,result.commitDigest)
-                result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_3',{'signature':signature_string})
-                if(result.status==200){
-                    location.reload();
-                    alert("發送成功")
+                result = response.result;
+                signature_string = sign(privateKey, response.commitDigest)
+                response = await ajaxAwait('/E-portfolio/highSchool/commitSend',{'signature':signature_string, 'func':'AddAttribute'})
+                if(response.error){
+                    return alert(`error: ${response.result}`)
                 }
-                else{
-                    alert(result.msg)
-                }
+                // what the fuck alert?!
+                if(alert(`${result}`)){}
+                else window.location.reload(); 
+                
             })
         }
         async function main() {

@@ -55,17 +55,6 @@ var accChannel, accInstance;
 var addAttribte = {};
 var addPermissionOperation ={};
 
-
-
-
-const preventMalleability = (sig, ecdsa) => {
-    const halfOrder = ecdsa.n.shrn(1);
-    if (sig.s.cmp(halfOrder) === 1) {
-        const bigNum = ecdsa.n;
-        sig.s = bigNum.sub(sig.s);
-    }
-    return sig;
-};
 var awardInstanceListener = async (event) => {
     const eventInfo = JSON.parse(event.payload.toString());
 
@@ -153,9 +142,136 @@ async function opensslDecode(buffer_input){
         })
     })
 }
+async function createTransaction(){
+    // parameter 0 is user identity
+    // parameter 1 is chaincode function Name
+    // parameter 2 to end is chaincode function parameter
+    var user = await buildCertUser(wallet, fabric_common, arguments[0]);
+    var userContext = gatewayOrg2.client.newIdentityContext(user)
+
+    var endorsementStore;
+    switch (arguments[1]){
+        case 'AddAttribute':
+            endorsementStore = addAttribte;
+            break;
+        case 'PermissionOperation':
+            endorsementStore = addPermissionOperation
+            break;
+    }
+    var paras = [];
+    for(var i= 2 ; i< arguments.length ; i++){
+        paras.push(arguments[i])
+    }
+    var endorsement = accChannel.channel.newEndorsement('AccessControlManager');
+    var build_options = { fcn: arguments[1], args: paras, generateTransactionId: true }
+    var proposalBytes = endorsement.build(userContext, build_options);
+    const digest = hashFunction(proposalBytes);
+    endorsementStore[arguments[0]] = endorsement
+    
+    return new Promise(function(reslove,reject){
+        reslove(digest);
+    })
+}
+async function proposalAndCreateCommit(){
+    // parameter 0 is user identity
+    // parameter 1 is chaincode function Name
+    // parameter 2 is signature
+
+    var endorsementStore;
+    switch (arguments[1]){
+        case 'AddAttribute':
+            endorsementStore = addAttribte;
+            break;
+        case 'PermissionOperation':
+            endorsementStore = addPermissionOperation
+            break;
+    }
+    let endorsement = endorsementStore[arguments[0]]
+    if(typeof(endorsement) == "undefined"){
+        return new Promise(function(reslove,reject){
+            reject({
+                'error': true,
+                'result': "endorsement dosen't exist."
+            });
+        })
+    }
+    endorsement.sign(arguments[2]);
+    let proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() });
+
+    if(proposalResponses.responses[0].response.status == 200){
+        let user = await buildCertUser(wallet, fabric_common, arguments[0]);
+        let userContext = gatewayOrg2.client.newIdentityContext(user)
+
+        let commit = endorsement.newCommit();
+        let commitBytes = commit.build(userContext)
+        let commitDigest = hashFunction(commitBytes)
+        let result = proposalResponses.responses[0].response.payload.toString();
+        endorsementStore[arguments[0]] = commit;
+
+        return new Promise(function(reslove,reject){
+            reslove({
+                'commitDigest':commitDigest,
+                'result': result
+            });
+        })
+    }
+    else
+    {
+        return new Promise(function(reslove,reject){
+            reject({
+                'error': true,
+                'result': proposalResponses.responses[0].response.message
+            });
+        })
+    }
+}
+async function commitSend(){
+    // parameter 0 is user identity
+    // parameter 1 is chaincode function Name
+    // parameter 2 is signature
+
+    var endorsementStore;
+    switch (arguments[1]){
+        case 'AddAttribute':
+            endorsementStore = addAttribte;
+            break;
+        case 'PermissionOperation':
+            endorsementStore = addPermissionOperation
+            break;
+    }
+    let commit = endorsementStore[arguments[0]]
+    if(typeof(commit) == "undefined"){
+        return new Promise(function(reslove,reject){
+            reject({
+                'error': true,
+                'result': "commit doesn't exist."
+            });
+        }) 
+    }
+    commit.sign(arguments[2])
+    let commitSendRequest = {};
+    commitSendRequest.requestTimeout = 300000
+    commitSendRequest.targets = accChannel.channel.getCommitters();
+    let commitResponse = await commit.send(commitSendRequest);
+
+    if(commitResponse['status']=="SUCCESS"){
+        return new Promise(function(reslove,reject){
+            reslove({
+                'result': true
+            });
+        })
+    }
+    else{
+        return new Promise(function(reslove,reject){
+            reject({
+                'error': true,
+                'result': "commit error"
+            });
+        })
+    }
+}
 
 function convertSignature(signature){
-    
     signature = signature.split("/");
     let signature_array = new Uint8Array(signature.length);
     for(var i=0;i<signature.length;i++){
@@ -297,87 +413,19 @@ passport.authenticate('local'),
 async function(req,res){
     res.send({url: "/E-portfolio/highSchool/profile"});
 })
-router.post("/addAttribue_1", isAuthenticated, async function(req,res){
-    let attribute = req.body.attribute
-    var user = await buildCertUser(wallet, fabric_common, req.user.identity);
-    var userContext = gatewayOrg2.client.newIdentityContext(user)
-    // create tx 
-    var endorsement = accChannel.channel.newEndorsement('AccessControlManager');
-    var build_options = { fcn: 'AddAttribute', args: [attribute], generateTransactionId: true }
-    var proposalBytes = endorsement.build(userContext, build_options);
-    addAttribte[req.user.identity] = endorsement
-    const digest = hashFunction(proposalBytes);
 
-    return res.send({'digest':digest})
-})
-router.post("/addAttribue_2", isAuthenticated, async function(req,res){
-    
-    if(addAttribte[req.user.identity]){
-        let {signature} = req.body;
-        let endorsement = addAttribte[req.user.identity]
-        
-        signature = signature.split("/");
-        let signature_array = new Uint8Array(signature.length);
-        for(var i=0;i<signature.length;i++){
-            signature_array[i] = parseInt(signature[i])
-        }
-        let signature_buffer = Buffer.from(signature_array)
-        
-        endorsement.sign(signature_buffer);
-        console.log(accChannel.channel.getEndorsers())
-        const proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() });
-        let result = proposalResponses.responses[0].response.payload.toString();
-        
-        if(proposalResponses.responses[0].response.status==200){
-            let user = await buildCertUser(wallet,fabric_common,req.user.identity);
-            let userContext = gatewayOrg2.client.newIdentityContext(user)
-
-            let commit = endorsement.newCommit();
-            let commitBytes = commit.build(userContext)
-            let commitDigest = hashFunction(commitBytes)
-            addAttribte[req.user.identity] = commit
-            return res.send({'status':200,'commitDigest':commitDigest,'msg':result})
-        }
-        else{
-            return res.send({'status':500})
-        }
-    }else{
-        res.send({'msg':'error'})
+router.post("/addAttribue", isAuthenticated, async function(req,res){
+    let {attribute} = req.body
+    try{
+        const digest = await createTransaction(req.user.identity, 'AddAttribute', attribute);
+        return res.send({'digest':digest})
+    }
+    catch(e){
+        console.log(e)
+        return res.send({'error': "error","result": e})
     }
 })
-router.post("/addAttribue_3", isAuthenticated, async function(req,res){
-    if(addAttribte[req.user.identity]){
-        let {signature} = req.body;
-        let commit = addAttribte[req.user.identity]
-
-        signature = signature.split("/");
-        let signature_array = new Uint8Array(signature.length);
-        for(var i=0;i<signature.length;i++){
-            signature_array[i] = parseInt(signature[i])
-        }
-        let signature_buffer = Buffer.from(signature_array)
-        commit.sign(signature_buffer)
-
-        const commitSendRequest = {};
-        commitSendRequest.requestTimeout = 300000
-        commitSendRequest.targets = accChannel.channel.getCommitters();
-        const commitResponse = await commit.send(commitSendRequest);
-
-        if(commitResponse['status']=="SUCCESS"){
-            return res.send({'status':200,'msg':""})
-        }
-        else{
-            return res.send({'status':500,'msg':'commit error'})
-        }
-    }
-    else{
-        return res.send({'status':500,'msg':"no endorsement"})
-    }
-    
-})
-
-
-router.post("/addPermissionOperation_1", isAuthenticated, async function(req,res){
+router.post("/addPermissionOperation", isAuthenticated, async function(req,res){
     let { orgPubkey, attributes} = req.body
     try
     {
@@ -385,99 +433,46 @@ router.post("/addPermissionOperation_1", isAuthenticated, async function(req,res
         let accJson = JSON.parse(acc.toString())
         let attrbutesString = attributes.join(" ")
 
-        // check all accJson in user acc 
+        // check all attributes in user acc 
         attributes.forEach(attribute => {
             if(!accJson.Attribute.includes(attribute)){
-                return res.send({'error': attribute})
+                return res.send({'error': true , 'result':`${attribute} dosen't exist.`})
             }
         });
         
         // check orgPubkey exist
-
-        // create user
-        let user = await buildCertUser(wallet, fabric_common, req.user.identity);
-        let userContext = gatewayOrg2.client.newIdentityContext(user)
-
-        // create tx 
-        let endorsement = accChannel.channel.newEndorsement('AccessControlManager');
-        let build_options = { fcn: 'PermissionOperation', args: [ orgPubkey, attrbutesString ], generateTransactionId: true }
-        let proposalBytes = endorsement.build(userContext, build_options);
-        addPermissionOperation[req.user.identity] = endorsement
-        const digest = hashFunction(proposalBytes);
-        
+        const digest = await createTransaction(req.user.identity, 'PermissionOperation', orgPubkey, attrbutesString);
         return res.send({'digest':digest})
     }
     catch(e){
         console.log(e)
-        return res.send({'error': "error"})
+        return res.send({'error': "error","result": e})
     }
 })
-router.post("/addPermissionOperation_2", isAuthenticated, async function(req,res){
+router.post("/proposalAndCreateCommit", isAuthenticated, async function(req,res){
+    try {
+        let {signature,func} = req.body;
+        let signature_buffer = convertSignature(signature)
+        let response = await proposalAndCreateCommit(req.user.identity, func, signature_buffer)
+        console.log(response)
+        return res.send(response)
 
-    if(addPermissionOperation[req.user.identity]){
-        let {signature} = req.body;
-        let endorsement = addPermissionOperation[req.user.identity]
-        
-        let signature_buffer =convertSignature(signature)
-        /*
-        signature = signature.split("/");
-        let signature_array = new Uint8Array(signature.length);
-        for(var i=0;i<signature.length;i++){
-            signature_array[i] = parseInt(signature[i])
-        }
-        let signature_buffer = Buffer.from(signature_array)*/
-        endorsement.sign(signature_buffer);
-        
-        const proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() }); 
-        let result = proposalResponses.responses[0].response.payload.toString();
-
-        if(proposalResponses.responses[0].response.status==200){
-            let user = await buildCertUser(wallet,fabric_common,req.user.identity);
-            let userContext = gatewayOrg2.client.newIdentityContext(user)
-
-            let commit = endorsement.newCommit();
-            let commitBytes = commit.build(userContext)
-            let commitDigest = hashFunction(commitBytes)
-            addPermissionOperation[req.user.identity] = commit
-            return res.send({'status':200,'commitDigest':commitDigest,'msg':result})
-        }
-        else
-        {
-            return res.send({'status':500 , 'msg': proposalResponses.responses[0].response.message})
-        }
-    }else{
-        return res.send({'msg':'error'})
+    } catch (error) {
+        console.log(error)
+        return res.send(error)
     }
 })
-router.post("/addPermissionOperation_3", isAuthenticated, async function(req,res){
-    if(addPermissionOperation[req.user.identity]){
-        let {signature} = req.body;
-        let commit = addPermissionOperation[req.user.identity]
-
-        signature = signature.split("/");
-        let signature_array = new Uint8Array(signature.length);
-        for(var i=0;i<signature.length;i++){
-            signature_array[i] = parseInt(signature[i])
-        }
-        let signature_buffer = Buffer.from(signature_array)
-        commit.sign(signature_buffer)
-
-        const commitSendRequest = {};
-        commitSendRequest.requestTimeout = 300000
-        commitSendRequest.targets = accChannel.channel.getCommitters();
-        const commitResponse = await commit.send(commitSendRequest);
-
-        if(commitResponse['status']=="SUCCESS"){
-            return res.send({'status':200})
-        }
-        else{
-            return res.send({'status':500,'msg':'commit error'})
-        }
+router.post("/commitSend", isAuthenticated, async function(req,res){
+    try {
+        let {signature , func} = req.body;
+        let signature_buffer = convertSignature(signature);
+        let response  = await commitSend(req.user.identity, func, signature_buffer);
+        console.log(response)
+        return res.send(response)
+    } catch (error) {
+        console.log(error)
+        return res.send(error)
     }
-    else{
-        return res.send({'status':500,'msg':"no endorsement"})
-    }
-    
 })
 
 
