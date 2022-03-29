@@ -3,10 +3,10 @@
     <body>
         <div class="container mt-2">
             <div class="row">
-                <div class="col-md-8 center-block offset-md-2">
+                <div class="col-md-10 center-block offset-md-1">
                     <div class="card text-center">
                         <div class="card-header">
-                            <h4 style="margin:0;" class="font-weight-bold">Profile </h4>
+                            <h4 style="margin:0;" class="font-weight-bold">Certificate management</h4>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -26,19 +26,20 @@
                                                 </span>
                                                 <% } %>
                                 </div>
-                                 -->
+                                
                                 <div class="col-md-2 p-2  font-weight-bold">學校公鑰</div>
                                 <div class="col-md-10 p-2 mb-2">
                                     <%= acc.OrgPubkey %>
                                 </div>
+                                 -->
                             </div>
                             <div class="card">
                                 <div class="card-header">
-                                    目前已獲得證書
+                                    My Award
                                 </div>
                                 <div class="card-body">
                                     <% for(var i=0; i< acc.Attribute.length ; i++) {%>
-                                        <div class="col-md-2 mt-2 btn btn btn-primary">
+                                        <div class="col-md-2 mt-2 btn btn btn-primary award">
                                             <i class="bi bi-award"></i>
                                             <%= acc.Attribute[i] %>
                                         </div>
@@ -47,17 +48,15 @@
                             </div>
                             <div class="card mt-3">
                                 <div class="card-header">
-                                    待加入證書
+                                    Award received
                                 </div>
                                 <div class="card-body">
                                     <% for(var i=0; i< acc.AddAttribute.length ; i++) {%>
-                                        <div class="col-md-2 mt-2 btn btn btn-success" id= <%= acc.AddAttribute[i] %> >
+                                        <div class="col-md-2 mt-2 btn btn btn-success receiveAward" id= <%= acc.AddAttribute[i] %> >
                                             <i class="bi bi-award"></i>
                                             <%= acc.AddAttribute[i] %>
                                         </div>
                                     <% } %>
-
-                                    
                                 </div>
                             </div>
                         </div>
@@ -66,33 +65,34 @@
             </div>
 
             <div class="row mt-3">
-                <div class="col-md-8 offset-md-2">
+                <div class="col-md-10 offset-md-1">
                     <div class="card">
                         <div class="card-header">
-                            <h4 style="margin:0;" class="font-weight-bold">許可操作</h4>
+                            <h4 style="margin:0;" class="font-weight-bold">Permission Operation</h4>
                         </div>
                         <div class="card-body">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th scope="col">證書</th>
-                                        <th scope="col">開放組織</th>
-                                        <th scope="col">許可時間</th>
+                                        <th scope="col">Authorized Organization</th>
+                                        <th scope="col">Readable Award</th>
+                                        <th scope="col">Authorization time</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
+                            <button type="button" class="btn btn-primary btn-lg btn-block authorize">Authorize</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <!-- Modal -->
-        <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal fade" id="receiveAward" data-backdrop="static" data-keyboard="false" tabindex="-1"  aria-hidden="true">
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                <h5 class="modal-title" id="staticBackdropLabel">通知</h5>
+                <h5 class="modal-title">Inform</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -111,6 +111,40 @@
             </div>
             </div>
         </div>
+        
+        <div class="modal fade" id="authorizeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Authorize</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <div class="input-group-prepend"><span id="" class="input-group-text">Authorized Organization</span>
+                        </div><input type="text" id="orgPubkey" placeholder="Enter Organization Public Key" required="required" class="form-control">
+                    </div>
+                    <p class="mt-2 font-weight-bolder">Select Authorization Data:</p>
+                    <div class="row mt-2">
+                        <% for(var i=0; i< acc.Attribute.length ; i++) {%>
+                            <div class="input-group col-md-6 mt-1">
+                                <div class="input-group-text" >
+                                    <input class="attribute_checkbox" type="checkbox" value="<%=acc.Attribute[i]%>">
+                                </div>
+                                <input type="text" class="form-control" value="<%= acc.Attribute[i] %>" disabled="true" style="background-color:#fff"> 
+                            </div>              
+                        <% } %>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" value="submit" class="btn btn-success btn-lg btn-block mt-4 authorize-submit">
+                </div>
+            </div>
+            </div>
+        </div>
+         
     </body>
     <script>
         
@@ -160,12 +194,53 @@
             var identityManagerInstance = new web3.eth.Contract(identityManagerABI , contract_address);
             var personalIdentityAddress = await identityManagerInstance.methods.getAccessManagerAddress(account).call({from: account});
             var personalIdentityInstance =  new web3.eth.Contract(personalIdentityABI , personalIdentityAddress);
+            $(".authorize").on('click',async function(e){
+                $('#authorizeModal').modal('show');
+            })
+            
+            $(".authorize-submit").on('click',async function(e){
+                let orgPubkey = $("#orgPubkey").val();
+                if(orgPubkey==""){
+                    return alert("Pubkey is empty.")
+                }
+                let attributes = [];
+                let checkboxes = $('.attribute_checkbox:checked')
+                for(let i=0; i<checkboxes.length; i++){
+                    attributes.push(checkboxes[i].value)
+                }
+                if(attributes.length==0){
+                    return alert("Select at least one sharing attribute.")
+                }
 
-            $(".btn-success").on('click',async function(e){
+                let result;
+                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_1',{
+                    orgPubkey : orgPubkey,
+                    attributes : attributes
+                })
+                console.log(result)
+                if(!result.digest){
+                    return alert(`Attribute ${result.error} doesn't exist.`)
+                }
+                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
+                let privateKey = await ethereum.request({
+                    method: 'eth_decrypt',
+                    params: [encryptKey, account],
+                });
+                let signature_string;
+                signature_string = sign(privateKey, result.digest)
+                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_2',{'signature':signature_string})
+                if(!result.commitDigest){
+                    return alert(`${result.msg}.`)
+                }
+                signature_string = sign(privateKey,result.commitDigest)
+                result = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation_3',{'signature':signature_string})
+            })
+            $(".receiveAward").on('click',async function(e){
                 var clickedBtnID = $(this).attr('id');
                 $('.new-attribute ').text(clickedBtnID);
-                $('#staticBackdrop').modal('show');
+                $('#receiveAward').modal('show');
             });
+            
             $(".confirm").on('click',async function(e){
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
                 let privateKey = await ethereum.request({
@@ -187,8 +262,8 @@
                 signature_string = sign(privateKey,result.commitDigest)
                 result = await ajaxAwait('/E-portfolio/highSchool/addAttribue_3',{'signature':signature_string})
                 if(result.status==200){
-                    alert("發送成功")
                     location.reload();
+                    alert("發送成功")
                 }
                 else{
                     alert(result.msg)

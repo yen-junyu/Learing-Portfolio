@@ -53,6 +53,7 @@ var gatewayOrg2, gatewayOrg3;
 
 var accChannel, accInstance;
 var addAttribte = {};
+var addPermissionOperation ={};
 
 
 
@@ -73,8 +74,13 @@ var awardInstanceListener = async (event) => {
             //confirm this student in org
             let result = await Mapping.findOne({pubkey: eventInfo.student});
             let pubkey = result.dataValues.pubkey
-            let response = await accInstance.submitTransaction("AddAttributeForUser",pubkey,eventInfo.activityName)
-            console.log(response.toString())
+            let acc = await accInstance.evaluateTransaction('GetUserAccControl',pubkey);
+            let accJson = JSON.parse(acc)
+            
+            if(!accJson.AddAttribute.includes(eventInfo.activityName) && !accJson.Attribute.includes(eventInfo.activityName)){
+                let response = await accInstance.submitTransaction("AddAttributeForUser",pubkey,eventInfo.activityName)
+                console.log(response.toString())
+            }
         }
         catch(e){
             console.log(e)
@@ -147,6 +153,17 @@ async function opensslDecode(buffer_input){
         })
     })
 }
+
+function convertSignature(signature){
+    
+    signature = signature.split("/");
+    let signature_array = new Uint8Array(signature.length);
+    for(var i=0;i<signature.length;i++){
+        signature_array[i] = parseInt(signature[i])
+    }
+    let signature_buffer = Buffer.from(signature_array)
+    return signature_buffer;
+}
 passport.use('local',new LocalStrategy({
     usernameField: 'account',
     passwordField: 'signature',
@@ -161,9 +178,8 @@ passport.use('local',new LocalStrategy({
     }
 ))
 router.get("/profile", isAuthenticated, async function(req,res){
-    console.log(req.user)
     let acc = await accInstance.evaluateTransaction('GetUserAccControl',req.user.pubkey);
-    let accJson = JSON.parse(acc)
+    let accJson = JSON.parse(acc.toString())
     console.log(accJson)
     return res.render("E-portfolio/highSchool/profile.ejs",{"acc":accJson,"contract_address":contract_address,"user":req.user.identity})
 })
@@ -266,7 +282,6 @@ async function(req,res,next){
                 catch(e){
                     return res.send({'msg':'create acc error.'});
                 }
-                
             }
             else{
                 console.log("CN and account are different.")
@@ -282,10 +297,9 @@ passport.authenticate('local'),
 async function(req,res){
     res.send({url: "/E-portfolio/highSchool/profile"});
 })
-router.post("/addAttribue_1",isAuthenticated,async function(req,res){
+router.post("/addAttribue_1", isAuthenticated, async function(req,res){
     let attribute = req.body.attribute
-    //console.log(user)
-    var user = await buildCertUser(wallet,fabric_common , req.user.identity);
+    var user = await buildCertUser(wallet, fabric_common, req.user.identity);
     var userContext = gatewayOrg2.client.newIdentityContext(user)
     // create tx 
     var endorsement = accChannel.channel.newEndorsement('AccessControlManager');
@@ -296,7 +310,7 @@ router.post("/addAttribue_1",isAuthenticated,async function(req,res){
 
     return res.send({'digest':digest})
 })
-router.post("/addAttribue_2",isAuthenticated,async function(req,res){
+router.post("/addAttribue_2", isAuthenticated, async function(req,res){
     
     if(addAttribte[req.user.identity]){
         let {signature} = req.body;
@@ -331,7 +345,7 @@ router.post("/addAttribue_2",isAuthenticated,async function(req,res){
         res.send({'msg':'error'})
     }
 })
-router.post("/addAttribue_3",isAuthenticated,async function(req,res){
+router.post("/addAttribue_3", isAuthenticated, async function(req,res){
     if(addAttribte[req.user.identity]){
         let {signature} = req.body;
         let commit = addAttribte[req.user.identity]
@@ -361,5 +375,110 @@ router.post("/addAttribue_3",isAuthenticated,async function(req,res){
     }
     
 })
+
+
+router.post("/addPermissionOperation_1", isAuthenticated, async function(req,res){
+    let { orgPubkey, attributes} = req.body
+    try
+    {
+        let acc = await accInstance.evaluateTransaction('GetUserAccControl',req.user.pubkey);
+        let accJson = JSON.parse(acc.toString())
+        let attrbutesString = attributes.join(" ")
+
+        // check all accJson in user acc 
+        attributes.forEach(attribute => {
+            if(!accJson.Attribute.includes(attribute)){
+                return res.send({'error': attribute})
+            }
+        });
+        
+        // check orgPubkey exist
+
+        // create user
+        let user = await buildCertUser(wallet, fabric_common, req.user.identity);
+        let userContext = gatewayOrg2.client.newIdentityContext(user)
+
+        // create tx 
+        let endorsement = accChannel.channel.newEndorsement('AccessControlManager');
+        let build_options = { fcn: 'PermissionOperation', args: [ orgPubkey, attrbutesString ], generateTransactionId: true }
+        let proposalBytes = endorsement.build(userContext, build_options);
+        addPermissionOperation[req.user.identity] = endorsement
+        const digest = hashFunction(proposalBytes);
+        
+        return res.send({'digest':digest})
+    }
+    catch(e){
+        console.log(e)
+        return res.send({'error': "error"})
+    }
+})
+router.post("/addPermissionOperation_2", isAuthenticated, async function(req,res){
+
+    if(addPermissionOperation[req.user.identity]){
+        let {signature} = req.body;
+        let endorsement = addPermissionOperation[req.user.identity]
+        
+        let signature_buffer =convertSignature(signature)
+        /*
+        signature = signature.split("/");
+        let signature_array = new Uint8Array(signature.length);
+        for(var i=0;i<signature.length;i++){
+            signature_array[i] = parseInt(signature[i])
+        }
+        let signature_buffer = Buffer.from(signature_array)*/
+        endorsement.sign(signature_buffer);
+        
+        const proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() }); 
+        let result = proposalResponses.responses[0].response.payload.toString();
+
+        if(proposalResponses.responses[0].response.status==200){
+            let user = await buildCertUser(wallet,fabric_common,req.user.identity);
+            let userContext = gatewayOrg2.client.newIdentityContext(user)
+
+            let commit = endorsement.newCommit();
+            let commitBytes = commit.build(userContext)
+            let commitDigest = hashFunction(commitBytes)
+            addPermissionOperation[req.user.identity] = commit
+            return res.send({'status':200,'commitDigest':commitDigest,'msg':result})
+        }
+        else
+        {
+            return res.send({'status':500 , 'msg': proposalResponses.responses[0].response.message})
+        }
+    }else{
+        return res.send({'msg':'error'})
+    }
+})
+router.post("/addPermissionOperation_3", isAuthenticated, async function(req,res){
+    if(addPermissionOperation[req.user.identity]){
+        let {signature} = req.body;
+        let commit = addPermissionOperation[req.user.identity]
+
+        signature = signature.split("/");
+        let signature_array = new Uint8Array(signature.length);
+        for(var i=0;i<signature.length;i++){
+            signature_array[i] = parseInt(signature[i])
+        }
+        let signature_buffer = Buffer.from(signature_array)
+        commit.sign(signature_buffer)
+
+        const commitSendRequest = {};
+        commitSendRequest.requestTimeout = 300000
+        commitSendRequest.targets = accChannel.channel.getCommitters();
+        const commitResponse = await commit.send(commitSendRequest);
+
+        if(commitResponse['status']=="SUCCESS"){
+            return res.send({'status':200})
+        }
+        else{
+            return res.send({'status':500,'msg':'commit error'})
+        }
+    }
+    else{
+        return res.send({'status':500,'msg':"no endorsement"})
+    }
+    
+})
+
 
 module.exports = router;
