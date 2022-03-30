@@ -1,5 +1,4 @@
 <%- include('header') -%>
-
     <body>
         <div class="container mt-2">
             <div class="row">
@@ -52,7 +51,7 @@
                                 </div>
                                 <div class="card-body">
                                     <% for(var i=0; i< acc.AddAttribute.length ; i++) {%>
-                                        <div class="col-md-2 mt-2 btn btn btn-success receiveAward" id= <%= acc.AddAttribute[i] %> >
+                                        <div class="col-md-2 mt-2 btn btn btn-info receiveAward" id= <%= acc.AddAttribute[i] %> >
                                             <i class="bi bi-award"></i>
                                             <%= acc.AddAttribute[i] %>
                                         </div>
@@ -76,10 +75,23 @@
                                     <tr>
                                         <th scope="col">Authorized Organization</th>
                                         <th scope="col">Readable Award</th>
-                                        <th scope="col">Authorization time</th>
+                                        <th scope="col">Operation</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                    <%  for (var [key, value] of Object.entries(acc.Permission)) {%>
+                                        <tr>
+                                            <th>
+                                                <%= key %>
+                                            </th>
+                                            <td><%= value %></td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-info update" name="<%=key%>">Update</button>
+                                                <button type="button" class="btn btn-dark revoke" name="<%=key%>">Revoke</button>
+                                            </td>
+                                        </tr>
+                                    <% } %> 
+                                </tbody>
                             </table>
                             <button type="button" class="btn btn-primary btn-lg btn-block authorize">Authorize</button>
                         </div>
@@ -99,7 +111,7 @@
                 </div>
                 <div class="modal-body">
                     您是否要取得於
-                    <span class="font-weight-bold new-attribute">
+                    <span class="font-weight-bold newAttribute">
 
                     </span>
                      獲得的證書
@@ -139,15 +151,39 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input type="submit" value="submit" class="btn btn-success btn-lg btn-block mt-4 authorize-submit">
+                    <input type="submit" value="submit" class="btn btn-success btn-lg btn-block mt-4 authorizeSubmit">
                 </div>
             </div>
             </div>
         </div>
+
+        <div class="modal fade" id="revokePermission" data-backdrop="static" data-keyboard="false" tabindex="-1"  aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title">Inform</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                    Do you want to revoke the Organization
+                    <span class="font-weight-bold revokeOrgName">
+
+                    </span>
+                    's access rights?
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">cancel</button>
+                <button type="button" class="revokeConfirm btn btn-primary">confirm</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        
          
     </body>
     <script>
-        
         var identityManagerABI,personalIdentityABI;
         var account;
         var contract_address = "<%= contract_address %>"
@@ -198,10 +234,15 @@
             })
             $(".receiveAward").on('click',async function(e){
                 var clickedBtnID = $(this).attr('id');
-                $('.new-attribute ').text(clickedBtnID);
+                $('.newAttribute').text(clickedBtnID);
                 $('#receiveAward').modal('show');
             });
-            $(".authorize-submit").on('click',async function(e){
+            $(".revoke").on('click',async function(e){
+                var clickedBtnName = $(this).attr('name');
+                $('.revokeOrgName').text(clickedBtnName);
+                $('#revokePermission').modal('show');
+            })           
+            $(".authorizeSubmit").on('click',async function(e){
                 //frontend check parameter
                 let orgPubkey = $("#orgPubkey").val();
                 if(orgPubkey==""){
@@ -217,7 +258,7 @@
                 }
                 //start to create tx
                 let response, result;
-                response = await ajaxAwait('/E-portfolio/highSchool/addPermissionOperation',{
+                response = await ajaxAwait('/E-portfolio/highSchool/updatePermission',{
                     orgPubkey : orgPubkey,
                     attributes : attributes
                 })
@@ -232,22 +273,20 @@
                 });
                 let signature_string;
                 signature_string = sign(privateKey, response.digest)
-                response = await ajaxAwait('/E-portfolio/highSchool/proposalAndCreateCommit',{'signature':signature_string ,'func':'PermissionOperation'})
+                response = await ajaxAwait('/E-portfolio/highSchool/proposalAndCreateCommit',{'signature':signature_string ,'func':'UpatePermission'})
                 if(response.error){
                     return alert(`error :${response.result}`)
                 }
                 result = response.result;
                 signature_string = sign(privateKey,response.commitDigest)
-                response = await ajaxAwait('/E-portfolio/highSchool/commitSend',{'signature':signature_string ,'func':'PermissionOperation'})
+                response = await ajaxAwait('/E-portfolio/highSchool/commitSend',{'signature':signature_string ,'func':'UpatePermission'})
                 if(response.error){
                     return alert(`error: ${response.result}`)
                 }
                 // what the fuck alert?!
                 if(alert(`${result}`)){}
                 else window.location.reload(); 
-            })
-            
-            
+            })       
             $(".confirm").on('click',async function(e){
                 let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
                 let privateKey = await ethereum.request({
@@ -255,7 +294,7 @@
                     params: [encryptKey, account],
                 });
                 let signature_string, response;
-                let attribute = $('.new-attribute ').text()
+                let attribute = $('.newAttribute').text()
                 response = await ajaxAwait('/E-portfolio/highSchool/addAttribue',{attribute:attribute})
                 if(response.error){
                     return alert(`error :${response.result}`)
@@ -275,6 +314,36 @@
                 if(alert(`${result}`)){}
                 else window.location.reload(); 
                 
+            })
+            $(".revokeConfirm").on('click',async function(e){
+                let encryptKey = await personalIdentityInstance.methods.getEncryptMaterial("HLFPrivateKey").call({from: account})
+                let privateKey = await ethereum.request({
+                    method: 'eth_decrypt',
+                    params: [encryptKey, account],
+                });
+                let signature_string, response, result;
+                let revokeOrgName = $('.revokeOrgName').text();
+                console.log(revokeOrgName);
+                response = await ajaxAwait('/E-portfolio/highSchool/revokePermission',{revokeOrgName:revokeOrgName})
+                if(response.error){
+                    return alert(`error :${response.result}`)
+                }
+                signature_string = sign(privateKey,response.digest)
+                response = await ajaxAwait('/E-portfolio/highSchool/proposalAndCreateCommit',{'signature':signature_string,'func':'RevokePermission'})
+                if(response.error){
+                    return alert(`error :${response.result}`)
+                }
+                result = response.result;
+                signature_string = sign(privateKey, response.commitDigest)
+                response = await ajaxAwait('/E-portfolio/highSchool/commitSend',{'signature':signature_string, 'func':'RevokePermission'})
+                if(response.error){
+                    return alert(`error: ${response.result}`)
+                }
+                // what the fuck alert?!
+                if(alert(`${result}`)){}
+                else window.location.reload(); 
+
+                console.log(response);
             })
         }
         async function main() {

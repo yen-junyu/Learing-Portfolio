@@ -53,7 +53,8 @@ var gatewayOrg2, gatewayOrg3;
 
 var accChannel, accInstance;
 var addAttribte = {};
-var addPermissionOperation ={};
+var upatePermission ={};
+var revokePermission = {}
 
 var awardInstanceListener = async (event) => {
     const eventInfo = JSON.parse(event.payload.toString());
@@ -154,8 +155,11 @@ async function createTransaction(){
         case 'AddAttribute':
             endorsementStore = addAttribte;
             break;
-        case 'PermissionOperation':
-            endorsementStore = addPermissionOperation
+        case 'UpatePermission':
+            endorsementStore = upatePermission
+            break;
+        case 'RevokePermission':
+            endorsementStore = revokePermission
             break;
     }
     var paras = [];
@@ -182,19 +186,22 @@ async function proposalAndCreateCommit(){
         case 'AddAttribute':
             endorsementStore = addAttribte;
             break;
-        case 'PermissionOperation':
-            endorsementStore = addPermissionOperation
+        case 'UpatePermission':
+            endorsementStore = upatePermission
+            break;
+        case 'RevokePermission':
+            endorsementStore = revokePermission
             break;
     }
-    let endorsement = endorsementStore[arguments[0]]
-    if(typeof(endorsement) == "undefined"){
+    if(typeof(endorsementStore) == "undefined"){
         return new Promise(function(reslove,reject){
             reject({
                 'error': true,
-                'result': "endorsement dosen't exist."
+                'result': "func dosen't exist."
             });
         })
     }
+    let endorsement = endorsementStore[arguments[0]]
     endorsement.sign(arguments[2]);
     let proposalResponses = await endorsement.send({ targets: accChannel.channel.getEndorsers() });
 
@@ -235,19 +242,22 @@ async function commitSend(){
         case 'AddAttribute':
             endorsementStore = addAttribte;
             break;
-        case 'PermissionOperation':
-            endorsementStore = addPermissionOperation
+        case 'UpatePermission':
+            endorsementStore = upatePermission
+            break;
+        case 'RevokePermission':
+            endorsementStore = revokePermission
             break;
     }
-    let commit = endorsementStore[arguments[0]]
-    if(typeof(commit) == "undefined"){
+    if(typeof(endorsementStore) == "undefined"){
         return new Promise(function(reslove,reject){
             reject({
                 'error': true,
-                'result': "commit doesn't exist."
+                'result': "func doesn't exist."
             });
         }) 
     }
+    let commit = endorsementStore[arguments[0]]
     commit.sign(arguments[2])
     let commitSendRequest = {};
     commitSendRequest.requestTimeout = 300000
@@ -270,7 +280,6 @@ async function commitSend(){
         })
     }
 }
-
 function convertSignature(signature){
     signature = signature.split("/");
     let signature_array = new Uint8Array(signature.length);
@@ -413,7 +422,17 @@ passport.authenticate('local'),
 async function(req,res){
     res.send({url: "/E-portfolio/highSchool/profile"});
 })
-
+router.post("/revokePermission", isAuthenticated, async function(req,res){
+    let {revokeOrgName} = req.body
+    try{
+        const digest = await createTransaction(req.user.identity, 'RevokePermission', revokeOrgName);
+        return res.send({'digest':digest})
+    }
+    catch(e){
+        console.log(e)
+        return res.send({'error': "error","result": e})
+    }
+})
 router.post("/addAttribue", isAuthenticated, async function(req,res){
     let {attribute} = req.body
     try{
@@ -425,7 +444,8 @@ router.post("/addAttribue", isAuthenticated, async function(req,res){
         return res.send({'error': "error","result": e})
     }
 })
-router.post("/addPermissionOperation", isAuthenticated, async function(req,res){
+
+router.post("/updatePermission", isAuthenticated, async function(req,res){
     let { orgPubkey, attributes} = req.body
     try
     {
@@ -441,7 +461,7 @@ router.post("/addPermissionOperation", isAuthenticated, async function(req,res){
         });
         
         // check orgPubkey exist
-        const digest = await createTransaction(req.user.identity, 'PermissionOperation', orgPubkey, attrbutesString);
+        const digest = await createTransaction(req.user.identity, 'UpatePermission', orgPubkey, attrbutesString);
         return res.send({'digest':digest})
     }
     catch(e){
