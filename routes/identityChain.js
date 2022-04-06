@@ -19,6 +19,7 @@ var apiUser = require('./identityChain/api.user')
 var apiOrganization = require('./identityChain/api.organization')
 
 var IM = new web3.eth.Contract(identityManger.abi, contract_address);
+var require_signature = "DID"
 //IM.events.AddUserEvent({fromBlock: 14},function(error, event){ console.log(event)})
 //IM.events.BindUserAccountEvent({fromBlock: 0},function(error, event){ console.log(event)})
 
@@ -83,7 +84,7 @@ passport.use('verifySign', new LocalStrategy( {
     async function (req, username, password, done) {
         let account = username.toUpperCase()
         let signature = password;
-        signingAccount = web3.eth.accounts.recover(config.require_signature, signature).toUpperCase();
+        signingAccount = web3.eth.accounts.recover(require_signature, signature).toUpperCase();
         if(signingAccount==account){
             return done(null,{"identity":account});
         }
@@ -130,10 +131,10 @@ router.post('/addUser',async function(req,res){
     let transactionObject = {
         gas: 6721975,
         data: encode_tx,
-        from: config.admin_address,
+        from: config.identityChain.address,
         to: contract_address
     }
-    await web3.eth.accounts.signTransaction(transactionObject, config.admin_key, async function (error, signedTx) {
+    await web3.eth.accounts.signTransaction(transactionObject, config.identityChain.key, async function (error, signedTx) {
         if (error) {
             console.log("sign error");
         } else {
@@ -213,7 +214,7 @@ router.post('/bindAccount',isAuthenticated, async function(req,res){
         from: config.admin_address,
         to: contract_address
     }
-    await web3.eth.accounts.signTransaction(transactionObject, config.admin_key, async function (error, signedTx) {
+    await web3.eth.accounts.signTransaction(transactionObject, config.identityChain.key, async function (error, signedTx) {
         if (error) {
             console.log("sign error");
         } else {
@@ -289,7 +290,7 @@ router.get('/', async function(req,res){
         res.redirect("/identityChain/profile")
     }
     else{
-        res.render('identityChain/identityHomePage.ejs',{'require_signature':config.require_signature ,'info':req.flash('info')});
+        res.render('identityChain/identityHomePage.ejs',{'require_signature':require_signature ,'info':req.flash('info')});
     }
 });
 

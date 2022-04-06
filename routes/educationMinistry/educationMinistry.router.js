@@ -24,7 +24,6 @@ var { buildCAClient, registerAndEnrollUser, enrollAdmin ,getAdminIdentity , buil
 var { buildCCPOrg1, buildWallet } = require('../../Util/AppUtil.js');
 var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
 
-
 var caClient,wallet;
 var gateway,network;
 
@@ -40,9 +39,7 @@ passport.use('EM_local', new LocalStrategy( {
 },
     async function (req, username, password, done) {
         let account = username.toLowerCase()
-        if(req.status == "pass"){
-            return done(null,{'identity':account});
-        }
+        return done(null,{'identity':account});
     }
 ));
 
@@ -53,14 +50,50 @@ async function init(){
 
     //build wallet to store cert
     let walletPath = path.join(__dirname, '..', '..' ,'wallet','educationMinistry');
+    //let universityWalletPath = path.join(__dirname, '..', '..' ,'wallet','university');
     wallet = await buildWallet(Wallets, walletPath);
-    
+    console.log(wallet)
+    //universityWallet = await buildWallet(Wallets, universityWalletPath);
+
     //enroll ca admin 
     let mspOrg1 = 'Org1MSP';
     await enrollAdmin(caClient, wallet, mspOrg1);
 
+    /*
+    //register and enroll university 
+    const adminIdentity = await wallet.get('admin');
+    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
+	const adminUser = await provider.getUserContext(adminIdentity, 'admin');
+
+    const secret = await caClient.register({
+        affiliation: 'org1.department1',
+        enrollmentID: 'University',
+        role: 'client',
+        attrs: [ {'name': 'role' , 'value': 'reviewer' ,'ecert':true }],
+    }, adminUser);
+
+    const enrollment = await caClient.enroll({
+        enrollmentID: 'University',
+        enrollmentSecret: secret
+    });
+    const x509Identity = {
+        credentials: {
+            certificate: enrollment.certificate,
+            privateKey: enrollment.key.toBytes(),
+        },
+        mspId: mspOrg1,
+        type: 'X.509',
+    };
+    await universityWallet.put('University', x509Identity);
+    */
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg1, 'educatuinMinistry', 'org1.department1' ,null, 'admin');
+    
+    /*await registerAndEnrollUser(caClient, universityWallet, mspOrg1, 'university', 'org1.department1' ,
+    [
+        {'name': 'role' , 'value': 'reviewer' ,'ecert':true },
+    ]
+    , 'client');*/
 
     //create Gateway to connect to peer
     gateway = new Gateway();
@@ -69,9 +102,9 @@ async function init(){
         identity: 'educatuinMinistry',
         discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
     });
-    network = await gateway.getNetwork('mychannel');
-    accInstance = network.getContract('accessControl');
-    certInstance = network.getContract('cert');
+    //network = await gateway.getNetwork('mychannel');
+    //accInstance = network.getContract('accessControl');
+    //certInstance = network.getContract('cert');
     //let r = await accInstance.evaluateTransaction("GetIdentity")
     //console.log(r.toString())
 }
@@ -85,7 +118,7 @@ let isAuthenticated = function (req, res, next) {
         return res.redirect("/E-portfolio/educationMinistry/")
     }
 };
-
+/* 
 router.post("/addAttribute", isAuthenticated, async function(req,res){
     //user address to get pubkey 
     console.log(req.user)
@@ -119,7 +152,7 @@ router.get("/addAttribute", isAuthenticated, async function(req,res){
     let activitys = await certInstance.evaluateTransaction('GetState',req.user.identity)
     activitys = activitys.toString()
     activitys = JSON.parse(activitys)
-    /*
+    
     activityList = []
     for(let i=0;i<activitys.length;i++){
         let activity = await certInstance.evaluateTransaction('GetState',req.user.identity + activitys[i])
@@ -127,22 +160,17 @@ router.get("/addAttribute", isAuthenticated, async function(req,res){
             activity = JSON.parse(activity.toString())
             activityList.push(activity)
         }
-    }*/
+    }
     res.render('E-portfolio/educationMinistry/addAttribute.ejs', {'activityList':activitys,'info':req.flash('info'),user:req.user.identity});
 })
-
+*/
 router.post("/loginWithMetamask",async function(req,res,next){
     let {account,signature} = req.body
     let signingAccount = web3.eth.accounts.recover(require_signature, signature).toLowerCase();
     if(signingAccount != account.toLowerCase()){
         return res.send({'msg':'Failed to verify signature'});
     }
-    let activityList = await certInstance.evaluateTransaction('GetState',signingAccount)
-    activityList = activityList.toString()
-    if(activityList.length==0){
-        return res.send({"msg":"you don't have right to create reward."})
-    }
-    req.status = "pass"
+    //不用登入直接申請 簽個名表身份
     next()
 },passport.authenticate('EM_local'),async function(req,res){
     res.send({url: "/E-portfolio/educationMinistry/addAttribute"})

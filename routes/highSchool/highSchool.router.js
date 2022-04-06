@@ -13,7 +13,7 @@ var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'))
 var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/identityManager.json', 'utf-8'));
 var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
 var contract_address = config.contracts.identityManagerAddress;
-var privateKey = config.org_address.highSchool.privateKey
+var privateKey = config.org_info.highSchool.key
 
 var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 
@@ -63,6 +63,9 @@ var awardInstanceListener = async (event) => {
         try{
             //confirm this student in org
             let result = await Mapping.findOne({pubkey: eventInfo.student});
+            if(!result){
+                return
+            }
             let pubkey = result.dataValues.pubkey
             let acc = await accInstance.evaluateTransaction('GetUserAccControl',pubkey);
             let accJson = JSON.parse(acc)
@@ -117,6 +120,7 @@ async function init(){
     //=========================
     let ccpOrg3 = buildCCPOrg3();
     gatewayOrg3 = new Gateway();
+    
     await gatewayOrg3.connect(ccpOrg3, {
         wallet,
         identity: 'APP_schoolA',
@@ -124,7 +128,7 @@ async function init(){
     });
     certChannel = await gatewayOrg3.getNetwork('cert-channel');
     awardInstance = certChannel.getContract('issueAward');
-    await awardInstance.addContractListener(awardInstanceListener);
+    await awardInstance.addContractListener(awardInstanceListener);   
 }
 init();
 
@@ -338,6 +342,7 @@ async function(req,res,next){
             //Confirm from DB that the user has logged in
             let result = await Mapping.findOne({address: account.toLowerCase()});
             pubkey = result.dataValues.pubkey
+            console.log(pubkey)
         }
         catch{
             pubkey = null
@@ -367,6 +372,7 @@ async function(req,res,next){
             pubkey_hex = pubkey_hex.substr('3059301306072a8648ce3d020106082a8648ce3d030107034200'.length)
             
             console.log(pubkey_hex)
+            
             //check CN and account
             if(CN.toLowerCase()== account.toLowerCase()){
                 try{
@@ -397,7 +403,8 @@ async function(req,res,next){
                 }
                 //Create access control on app chain
                 try{
-                    //var result = await accInstance.submitTransaction('AddPersonalAccessControl', pubkey_hex);
+                    console.log(pubkey_hex)
+                    var result = await accInstance.submitTransaction('AddPersonalAccessControl', pubkey_hex);
                     console.log('\x1b[33m%s\x1b[0m',result.toString());
                     var mapping = await Mapping.create({address:account.toLowerCase(), pubkey:pubkey_hex});
                     req.hashed = DID;
