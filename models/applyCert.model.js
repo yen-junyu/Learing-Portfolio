@@ -13,9 +13,6 @@ module.exports = (sequelize, Sequelize) => {
     type:{
       type: Sequelize.STRING
     },
-    API: {
-      type: Sequelize.STRING
-    },
     status :{
       type: Sequelize.STRING
     }

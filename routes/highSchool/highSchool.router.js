@@ -17,7 +17,6 @@ var privateKey = config.org_info.highSchool.key
 
 var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 
-
 //controller
 var Mapping = require("../../controllers/mapping.controller")
 var router = express.Router();
@@ -32,7 +31,6 @@ var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
 //encrypt 
 var { ethers } = require("ethers")
 var { decrypt, encrypt } = require("eth-sig-util")
-var crypto = require("crypto");
 
 //ecdsa
 const elliptic = require('elliptic');
@@ -88,8 +86,6 @@ var awardInstanceListener = async (event) => {
 }
 
 async function init(){
-    // initial some object
-
     //build ca client
     let ccpOrg2 = buildCCPOrg2();
     caClient = await buildCAClient(FabricCAServices_1, ccpOrg2, 'ca.org2.example.com');
@@ -107,7 +103,7 @@ async function init(){
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg2, 'schoolA', 'org1.department1', null, 'admin');
 
-    //create Gateway to connect to peer
+    //create Gateway to connect to school peer
     gatewayOrg2 = new Gateway();
     await gatewayOrg2.connect(ccpOrg2, {
         wallet,
@@ -120,7 +116,6 @@ async function init(){
     //=========================
     let ccpOrg3 = buildCCPOrg3();
     gatewayOrg3 = new Gateway();
-    
     await gatewayOrg3.connect(ccpOrg3, {
         wallet,
         identity: 'APP_schoolA',

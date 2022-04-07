@@ -1,43 +1,40 @@
 <%- include('header') -%>
-    
         <div class="container mt-2">
             <div class="row">
                 <div class="col-md-12 center-block">
                     <div class="card text-center">
-                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">許可申請
+                        <div style="font-size: 1.5rem; font-weight:bold" class="card-header">Apply for Reviewer
                         </div>
+                        
                         <div class="card-body">
                             <div class="input-group mb-3">
-                                <input type="text" placeholder="Enter Organization Name" aria-label="Parameter"
+                                <input type="text" placeholder="Enter Reviewer Name" aria-label="Parameter"
                                     aria-describedby="basic-addon2" required="required" class="func1-input0 form-control">
                                 <input type="text"
-                                    placeholder="Enter Activity Name" aria-label="Parameter" aria-describedby="basic-addon2" required="required"
+                                    placeholder="Enter Address" aria-label="Parameter" aria-describedby="basic-addon2" required="required"
                                     class="func1-input1 form-control">
-                                <div class="input-group-append"><button type="button" class="func1 btn btn-secondary">通過審核</button></div>
+                                <div class="input-group-append"><button type="button" class="func1 btn btn-secondary">Add</button></div>
                             </div>
+                             
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th scope="col">申請組織</th>
-                                        <th scope="col">活動名稱</th>
-                                        <th scope="col">類型</th>
-                                        <th scope="col">數量</th>
-                                        <th scope="col">狀態</th>
+                                        <th scope="col">Reviewer name</th>
+                                        <th scope="col">Public Key</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% for(var i=0; i< applyCerts.length ; i++) {%>
+                                    <% for(var i=0; i< reviewers.length ; i++) {%>
                                         <tr>
-                                            <td><%= applyCerts[i].account %></td>
-                                            <td><%= applyCerts[i].activityName %></td>
-                                            <td><%= applyCerts[i].type %></td>
-                                            <td><%= applyCerts[i].number %></td>
-                                            <td><%= applyCerts[i].status %></td>
+                                            <td><%= reviewers[i].reviewerName %></td>
+                                            <td><%= reviewers[i].pubkey.substr(50) %></td>
                                         </tr>
                                     <% } %>
                                 </tbody>
                             </table>
+                            
                         </div>
+                        
                     </div>
                 </div>
             </div>
@@ -48,8 +45,8 @@
             let input_0 = $(".func1-input0").val();
             let input_1 = $(".func1-input1").val();
             $.ajax({
-                url: '/E-portfolio/localEducationMinistry/consentCert',
-                data: { organization: input_0, activityName: input_1},
+                url: '/E-portfolio/educationMinistry/addReviewer',
+                data: { reviewerName: input_0, address: input_1 },
                 type: 'post',
                 dataType: 'json',
                 success: function(res) {

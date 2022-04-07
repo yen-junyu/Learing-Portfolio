@@ -7,7 +7,7 @@ var db = require("../../models");
 var Web3 = require('web3');
 var Mapping = require("../../controllers/mapping.controller")
 
-// some tools
+// some ecdsa tools
 let tls = require('tls');
 let net = require('net');
 const { KEYUTIL } = require('jsrsasign');
@@ -17,7 +17,6 @@ const ecdsaCurve = elliptic.curves['p256'];
 const ecdsa = new EC(ecdsaCurve);
 
 var x509JSON = JSON.parse(fs.readFileSync('./wallet/university/University.id', 'utf-8'));
-
 
 var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'));
 const web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
@@ -33,6 +32,7 @@ var { Gateway, Wallets} = require('fabric-network');
 var { buildCCPOrg1, buildWallet } = require('../../Util/AppUtil.js');
 var certInstance, accInstance , awardInstance;
 var publicKey,privateKey;
+var tokens = {}
 
 let getProtectedData = async(address) =>{
     return new Promise(async function(resolve,reject){
@@ -49,11 +49,21 @@ let getProtectedData = async(address) =>{
                 let key = object.key.replace(/\0/g, '').replace(pubkey,'');
                 accessLinks[key] =  object.value;
             });
-
             let acc = await accInstance.evaluateTransaction('GetPermission',pubkey);
             let attrs = JSON.parse(acc.toString());
+
+            // fetch data
+            let host = "localhost:3001/E-portfolio/dataStorge/";
+            await fetch(`http://${host}/getProtectedData?user=${pubkey}`,{
+                headers: { 'x-access-token': tokens['toeic'].jwt }
+            })
+            .then(res => res.json())
+            .then(json => {
+                console.log(json)
+                if (!json.success) throw `message ${json.message}`
+            })
             /*
-            attrs.forEach(function(object, index, array){
+            attrs.forEach(async function(object, index, array){
                 if(accessLinks[object]){
                     await fetch(`http://${api}`, {
                         headers: { 'x-access-token': token.jwt }
@@ -66,20 +76,6 @@ let getProtectedData = async(address) =>{
             resolve(null)
         } 
     })
-    //find token 
-    let token = await db.token.findOne({where:{"activity":"toeic"}});
-    
-    //find reviewer list
-    let users = await Mapping.findAll();
-    
-    // get user attribute 
-
-    // get data
-    let api = "localhost:3001/E-portfolio/dataStorge/getProtectedData";
-    await fetch(`http://${api}`, {
-        headers: { 'x-access-token': token.jwt }
-    })
-
 }
 let getIdentityToken = async(activity, host) => {
     return new Promise(async function(reslove,reject){
@@ -129,7 +125,7 @@ let getIdentityToken = async(activity, host) => {
             org : "",
             jwt: jwt
         }
-        let tokens = [token]
+        tokens[activity] = token;
         await db.token.bulkCreate(tokens, { updateOnDuplicate: ["jwt", "updatedAt"] });
         reslove(token)
     })
@@ -195,7 +191,10 @@ router.get("/dataSharing",async function(req,res){
     if(!address){
         return res.json({error:"error"})
     }
+    
     let data = await getProtectedData(address.toLowerCase());
+    console.log(data)
+    
     if(data){
         return res.json({data:data})
     }

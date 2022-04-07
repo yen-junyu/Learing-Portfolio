@@ -28,6 +28,17 @@ exports.findOne = async (option) => {
             let mapping = await Mapping.findOne({where:option});
             resolve(mapping);
         }
+        catch(e){
+            reject(e);
+        }
+    })
+}
+exports.findAll = async (option) => {
+    return new Promise(async function(resolve,reject){
+        try{
+            let mapping = await Mapping.findAll({where:option});
+            resolve(mapping);
+        }
         catch{
             reject(null);
         }

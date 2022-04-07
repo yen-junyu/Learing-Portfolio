@@ -15,35 +15,12 @@ const elliptic = require('elliptic')
 const EC = elliptic.ec;
 const ecdsaCurve = elliptic.curves['p256'];
 const ecdsa = new EC(ecdsaCurve);
-/*
-var privateKEY  = fs.readFileSync('./routes/dataStorge/user0.pem', 'utf8');
-var publicKey  = fs.readFileSync('./routes/dataStorge/user0Pubkey.pem', 'utf8');
-
-var signOptions = {
-    issuer:  "test",
-    subject:  "trst",
-    expiresIn:  "12h",
-    algorithm:  "ES256"   // RSASSA [ "RS256", "RS384", "RS512" ]
-};
-var token = jwt.sign({"123":"hello"}, privateKEY, signOptions);
-console.log(token)
-
-var verifyOptions = {
-    issuer:  "test",
-    subject:  "trst",
-    expiresIn:  "12h",
-    algorithm:  ["ES256"]
-   };
-var legit = jwt.verify(token, publicKey, verifyOptions);
-console.log(legit)
-*/
-// controller
-
 
 // config and abi 
 var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'));
 var dataStorge_address = config.org_info.dataStorge.address;
 var dataStorge_key = config.org_info.dataStorge.key;
+
 //var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/identityManager.json', 'utf-8'));
 //var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
 //var contract_address = config.contracts.identityManagerAddress;
@@ -51,33 +28,47 @@ var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 var router = express.Router();
 //var Mapping = require("../../controllers/mapping.controller")
 
-/*fabric SDK and Util
 var { Gateway, Wallets} = require('fabric-network');
-var { buildCAClient, registerAndEnrollUser, enrollAdmin ,getAdminIdentity , buildCertUser} = require('../../Util/CAUtil.js');
 var { buildCCPOrg3, buildWallet } = require('../../Util/AppUtil.js');
-var FabricCAServices_1  = require('../../Util/FabricCAService_1.js');
+var certInstance, accInstance , awardInstance;
 
-var caClient,wallet;
-var gateway,certChannel,certInstance,awardInstance;
-
-var require_signature = "LEM"
-
+var colors = require('colors');
 async function init(){
 
-}
-init();*/
-var activityName = "toeic"
+    let ccp = buildCCPOrg3();
+    let dataStorgeWalletPath = path.join(__dirname, '..', '..' ,'wallet','dataStorge');
+    let dataStorgeWallet = await buildWallet(Wallets, dataStorgeWalletPath);
+    let gateway = new Gateway();
 
+    await gateway.connect(ccp, {
+        wallet : dataStorgeWallet,
+        identity: 'DataStorge',
+        discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+    });
+
+    console.log('finish gateway connection'.yellow);
+    let certChannel = await gateway.getNetwork('cert-channel');
+    certInstance =  await certChannel.getContract('certManager');
+
+    let accChannel = await gateway.getNetwork('acc-channel');
+    accInstance = await accChannel.getContract('AccessControlManager');
+    
+    
+    console.log('get contract instance successfully'.yellow);
+}
+init();
+var activityName = "toeic"
 var verifyToken = function (req, res, next) {
+    var {user} = req.query;
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, dataStorge_key, async function(err, decoded) {
             if (err) {
                 return res.status(403).json({success: false, message: 'Failed to authenticate token.'})
             } else {
-                let permit = false;
-                console.log(decoded);
-                /*
+                // check with BC
+                let permitBuffer = await accInstance.evaluateTransaction('ConfirmUserAuthorization', user, decoded.sub, activityName);
+                let permit = (permitBuffer.toString() === 'true');
                 if (permit) {
                     req.sub = decoded.sub
                     req.decoded = decoded
@@ -86,9 +77,9 @@ var verifyToken = function (req, res, next) {
                 else {
                     return res.status(403).send({
                         success: false,
-                        message: `((bill)), Already revoke please request token with ${admin_address} again.`
+                        message: `Permission Denied .`
                     })
-                }*/
+                }
             }
         });
     } else {
@@ -109,22 +100,12 @@ router.post('/authenticate', async function(req, res) {
     let  publickeyObject = ecdsa.keyFromPublic(publicKey,'hex')
     let verify = publickeyObject.verify(Buffer.from(nonce.nonce),signature)
     console.log(verify)
-
-    /*
-    const recoverAddress = web3.eth.accounts.recover(req.body.signature);
-    if (recoverAddress !== org_address)
+    if(!verify){
         return res.json({
             success: false,
-            message: 'Target address is not the same'
-    })*/
-    /*
-    // Chceck nonce whether are the same
-    if (signature.message !== nonce.nonce)
-        return res.json({
-            success: false,
-            message: 'Nonce is not the same'
-    })
-
+            message: 'verify error.'
+        })
+    }
     // Check nonce is issued by me
     await db.nonce.findByPk(nonce.id)
         .then( data => {
@@ -147,14 +128,14 @@ router.post('/authenticate', async function(req, res) {
     let token = jwt.sign(info, dataStorge_key, {
         expiresIn: 60*60*30,
         issuer: dataStorge_address,
-        subject: org_address
+        subject: publicKey
     });
 
     return res.json({
         success: true,
         message: 'Got token',
         token: token
-    })*/
+    })
 })
 router.get('/auth/nonce', async function (req, res) {
     const {org} = req.query;
@@ -169,6 +150,7 @@ router.get('/auth/nonce', async function (req, res) {
 router.get('/getProtectedData',verifyToken, async function(req, res){
     res.json({status:200})
 })
+
 /*
 router.get('/protected', verifyTokenForDeposit, async function(req, res) {
     let data = req.decoded;

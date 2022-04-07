@@ -6,17 +6,15 @@ const Op = db.Sequelize.Op;
 exports.create = async (option) => {
     return new Promise(async function(resolve,reject){
        
-        const {account,activityName, number, type, API} = option;
-        if (!account || !activityName || !number || !type || !API ) {
+        const {account,activityName, number, type} = option;
+        if (!account || !activityName || !number || !type ) {
             reject("lost something.")
         }
-        
         let applyCert = {
             account : account,
             activityName : activityName,
             number : number,
             type : type,
-            API : API,
             status : "false"
         }
         try{

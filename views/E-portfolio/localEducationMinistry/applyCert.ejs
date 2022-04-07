@@ -15,21 +15,21 @@
         <div class="row">
             <div class="col-md-6 center-block offset-md-3">
                 <div class="card text-center">
-                    <div style="font-size: 1.5rem; font-weight:bold" class="card-header">申請頒發證書資格
+                    <div style="font-size: 1.5rem; font-weight:bold" class="card-header">Apply for certificate issuance
                     </div>
                     <div class="card-body">
                         <form action="/E-portfolio/localEducationMinistry/applyCert" method="post" id="apply">
                             <div class="input-group">
                                 <div class="input-group-prepend"><span id=""
-                                        class="input-group-text">活動名稱</span>
+                                        class="input-group-text">Activity Name</span>
                                 </div>
                                 <input type="text" name="activityName"
-                                    placeholder="Activity Name" required="required"
+                                    placeholder="Enter Activity Name" required="required"
                                     class="form-control">
                             </div>
                             <div class="input-group mt-3">
                                 <div class="input-group-prepend"><span id=""
-                                    class="input-group-text">活動類型</span>
+                                    class="input-group-text">Type</span>
                                 </div>
                                 <select class="form-control" form="apply" name="type">
                                     <option value="" disabled selected>Select activity type</option>
@@ -40,21 +40,31 @@
                             </div>
                             <div class="input-group mt-3">
                                 <div class="input-group-prepend"><span id=""
-                                    class="input-group-text">頒發數量</span>
+                                    class="input-group-text">Number</span>
                                 </div>
                                 <input type="text" name="number"
-                                    placeholder="Number of issued" required="required"
+                                    placeholder="Enter Number of issued" required="required"
                                     class="form-control">
                             </div>
-
+                            <!--
                             <div class="input-group mt-3">
                                 <div class="input-group-prepend"><span id=""
-                                    class="input-group-text">API 格式</span>
+                                    class="input-group-text">API format</span>
                                 </div>
                                 <input type="text" name="API"
-                                    placeholder="API format " required="required"
+                                    placeholder="Enter API format " required="required"
                                     class="form-control">
                             </div>
+                            <div class="input-group mt-3">
+                                <div class="input-group-prepend"><span id=""
+                                    class="input-group-text">Img url</span>
+                                </div>
+                                <input type="text" name="ImgUrl"
+                                    placeholder="Enter image url" required="required"
+                                    class="form-control">
+                            </div>
+                            -->
+
                             <input type="submit" value="申請" class="btn btn-primary btn-lg btn-block mt-3">
                         </form>
                     </div>

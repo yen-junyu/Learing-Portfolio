@@ -1,8 +1,8 @@
 <%- include('header') -%>
 <% if(info.length){ %>
-    <% if(info=="Created successfully." ){ %>
+    <% if(info=="Add Successfully." ){ %>
         <div class="alert alert-primary">
-            <%= info %>
+            Issue Successfully.
         </div>
         <% } else { %>
             <div class="alert alert-danger">
@@ -16,7 +16,7 @@
                 <div class="col-md-10 center-block offset-md-1">
                     <div class="card text-center">
                         <div class="card-header">
-                            <h4 style="margin:0;" class="font-weight-bold">已申辦活動</h4>
+                            <h4 style="margin:0;" class="font-weight-bold">Activity</h4>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -27,14 +27,19 @@
                             <div class="row">
                                 <% for(var i=0; i< activityList.length ; i++) {%>
                                     <div class="card col-md-4">
+                                        <h5 class="card-header">
+                                            <%= activityList[i].activityName %>
+                                        </h5>
+                                        <!--<img src="<%= activityList[i].ImgUrl %>"" class="card-img-top" alt="一張圖片">-->
                                         <div class="card-body">
-                                            <h5 class="card-header">
-                                                <%= activityList[i] %>
-                                            </h5>
-                                            <a href="#" class="btn btn-primary mt-3" data-toggle="modal" id= <%= activityList[i] %>>Issue</a>
+                                            <a href="#" class="btn btn-primary mt-3" data-toggle="modal" id= <%= activityList[i].activityName %> >Issue </a>
                                         </div>
                                     </div>
-                                    <% } %>
+                                <% } %>
+                                <% if(activityList.length == 0){ %> 
+                                    <h4 class="font-weight-bold text-center col-md-12"> There are no approved activities here...
+                                    </h4>
+                                <% } %>
                             </div>
                         </div>
                     </div>
@@ -46,7 +51,7 @@
             <div role="document" class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add attribute for user</h5>
+                        <h5 class="modal-title">Create Award for user</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                           <span aria-hidden="true">&times;</span>
                         </button>
@@ -56,14 +61,20 @@
                         <form action="/E-portfolio/localEducationMinistry/addAttribute" method="post">
                             <div class="input-group">
                                 <div class="input-group-prepend"><span id="" class="input-group-text">User</span>
-                                </div><input type="text" name="userAddress" placeholder="Enter user account" required="required"
+                                </div><input type="text" name="userAddress" placeholder="Enter user public key" required="required"
                                     class="form-control">
                             </div>
                             <div class="input-group mt-3">
-                                <div class="input-group-prepend"><span id="" class="input-group-text">Add Attribute Name</span>
+                                <div class="input-group-prepend"><span id="" class="input-group-text">Award Name</span>
                                 </div>
                                 <input type="text"  name="attribute" class="form-control font-weight-bold attributeName" readonly="readonly">
                                 </input>
+                            </div>
+                            <div class="input-group mt-3">
+                                <div class="input-group-prepend"><span id="" class="input-group-text">Access Link</span>
+                                </div>
+                                <input type="text" name="accessLink" placeholder="Enter access link" required="required"
+                                    class="form-control">
                             </div>
                             <input type="submit" value="submit" class="btn btn-success btn-lg btn-block mt-4">
                         </form>
