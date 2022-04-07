@@ -3,6 +3,11 @@ config
 organizations
 .DS_Store
 CSRandKey
+wallet
+test
+paper
+do
+contracts
 # Logs
 logs
 *.log
