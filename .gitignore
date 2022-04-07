@@ -2,6 +2,7 @@ bin
 config
 organizations
 .DS_Store
+CSRandKey
 # Logs
 logs
 *.log
