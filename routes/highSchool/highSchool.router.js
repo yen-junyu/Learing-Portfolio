@@ -3,6 +3,8 @@ var Web3 = require('web3');
 var fs = require('fs');
 var path = require('path')
 var openssl = require('openssl-nodejs');
+var crypto = require("crypto");
+var jwt = require('jsonwebtoken');
 
 // session
 var passport = require('passport');
@@ -12,6 +14,7 @@ var LocalStrategy = require('passport-local');
 var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'));
 var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/identityManager.json', 'utf-8'));
 var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
+var highSchoolAddress = config.org_info.highSchool.address;
 var contract_address = config.contracts.identityManagerAddress;
 var privateKey = config.org_info.highSchool.key
 
@@ -19,6 +22,10 @@ var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 
 //controller
 var Mapping = require("../../controllers/mapping.controller")
+var db = require("../../models");
+var Grade = db.grade;
+var Rank = db.rank;
+var StudentInfo = db.studentInfo;
 var router = express.Router();
 
 //fabric SDK and Util
@@ -34,6 +41,7 @@ var { decrypt, encrypt } = require("eth-sig-util")
 
 //ecdsa
 const elliptic = require('elliptic');
+const e = require('express');
 const EC = elliptic.ec;
 const ecdsaCurve = elliptic.curves['p256'];
 const ecdsa = new EC(ecdsaCurve);
@@ -44,15 +52,17 @@ var hashFunction = cryptoSuite.hash.bind(cryptoSuite)
 
 
 //global variable 
-var require_signature = "0xnycu";
+var require_signature = "schoolA?nonce:4521";
+var activityName = "schoolGrade"
+var OrgName = 'Org2'
 var mspOrg2 = 'Org2MSP';
 var caClient, wallet, adminUser;
 var gatewayOrg2, gatewayOrg3;
 
-var accChannel, accInstance;
+var accChannel, accInstance ,awardInstance ,certInstance;
 var addAttribte = {};
 var upatePermission ={};
-var revokePermission = {}
+var revokePermission = {};
 
 var awardInstanceListener = async (event) => {
     const eventInfo = JSON.parse(event.payload.toString());
@@ -114,26 +124,59 @@ async function init(){
     accInstance = await accChannel.getContract('AccessControlManager');
     //await accInstance.submitTransaction("Deletekey","041e26667dee0b081371428273abf7aa6995e1443033476fffaa31525262f19915b2188ca7656f394fe22ac8129fd510f673a6d2607347f271f74352dd5d582279")
     //=========================
+    
     let ccpOrg3 = buildCCPOrg3();
     gatewayOrg3 = new Gateway();
     await gatewayOrg3.connect(ccpOrg3, {
         wallet,
-        identity: 'APP_schoolA',
+        identity: 'cert_schoolA',
         discovery: { enabled: true, asLocalhost: true } 
     });
     certChannel = await gatewayOrg3.getNetwork('cert-channel');
     awardInstance = certChannel.getContract('issueAward');
+    certInstance =  certChannel.getContract('certManager');
     await awardInstance.addContractListener(awardInstanceListener);   
 }
 init();
 
-let isAuthenticated = function (req, res, next) {
+var isAuthenticated = function (req, res, next) {
     if (req.isAuthenticated()) {
         next();
     }
     else {
         return res.redirect("/E-portfolio/highSchool/")
     }
+};
+var verifyToken = async function (req, res, next) {
+    var {user} = req.query;
+    var token = req.body.token || req.query.token || req.headers['x-access-token'];
+    if (token) {
+        jwt.verify(token, privateKey, async function(err, decoded) {
+            if (err) {
+                return res.status(403).json({success: false, message: 'Failed to authenticate token.'})
+            } else {
+                // check with BC
+                let permitBuffer = await accInstance.evaluateTransaction('ConfirmUserAuthorization', user, decoded.sub, OrgName + "SchoolGrade");
+                let permit = (permitBuffer.toString() === 'true');
+                if (permit) {
+                    req.sub = decoded.sub
+                    req.decoded = decoded
+                    next();
+                }
+                else {
+                    return res.status(403).send({
+                        success: false,
+                        message: `Permission Denied .`
+                    })
+                }
+            }
+        });
+    } else {
+        return res.status(403).send({
+            success: false,
+            message: 'No token provided.'
+        })
+    }   
 };
 async function opensslDecode(buffer_input){
     return new Promise(function(reslove,reject){
@@ -301,11 +344,113 @@ passport.use('local',new LocalStrategy({
         }
     }
 ))
+router.post('/authenticate', async function(req, res) {
+    const {publicKey, signature, nonce} = req.body;
+    // show info about authenticate
+    //console.log("request hashed:"+identity);
+    console.log("request target:" + publicKey);
+    console.log(signature);
+    console.log(nonce);
+    
+    let  publickeyObject = ecdsa.keyFromPublic(publicKey,'hex')
+    let verify = publickeyObject.verify(Buffer.from(nonce.nonce),signature)
+
+    if(!verify){
+        return res.json({
+            success: false,
+            message: 'verify error.'
+        })
+    }
+    // Check nonce is issued by me
+    await db.nonce.findByPk(nonce.id)
+        .then( data => {
+            if (!data)
+                return res.json({status: false, message: "Nonce not exist"});
+            else
+                // if exist, delete it.
+                db.nonce.destroy({ where: {id: nonce.id}})
+                    .then( num => {
+                        if (num == 1) 
+                            console.log("Nonce was deleted successfully.");
+                        else
+                            console.log(`Cannot delete nonce with id ${nonce.id}, maybe not found`);
+                    })
+                    .catch( err => res.status(500).send({ message: `could not delete nonce with id=${nonce.id}`}));
+    });
+    let info = {
+        activity : activityName
+    }
+    let token = jwt.sign(info, privateKey, {
+        expiresIn: 60*60*30,
+        issuer: highSchoolAddress,
+        subject: publicKey
+    });
+
+    return res.json({
+        success: true,
+        message: 'Got token',
+        token: token
+    })
+})
+router.get('/auth/nonce', async function (req, res) {
+    const {org} = req.query;
+    if (!org)
+        return res.json({msg: "address of org is missing."});
+ 
+    let nonceObject = await db.nonce.create({org: org, value: crypto.randomBytes(8).toString('hex')})
+    let id = nonceObject.id
+    let nonce = nonceObject.value;
+    res.json({id: id, nonce: nonce});
+});
+router.get("/getSchoolData", verifyToken ,async function(req ,res){
+    
+    var {user} = req.query;
+    let studentInfo = (await StudentInfo.findOne({where:{publicKey:user}})).get({plain: true})
+    let account = studentInfo.account
+
+    let grade = await Grade.findAll({where:{account:account}})
+    grade.forEach(function(value, index, array){
+        array[index] = value.get({
+            plain: true
+        })
+    });
+    let rank = await Rank.findAll({where:{account:account}})
+    rank.forEach(function(value, index, array){
+        array[index] = value.get({
+            plain: true
+        })
+    });
+
+    let data = {
+        status : true,
+        studentInfo : studentInfo,
+        grade : grade,
+        rank : rank
+    }
+    
+    return res.json(data)
+})
+router.get("/getPubkey", isAuthenticated , async function(req , res){
+    let pubkey = req.user.pubkey
+    console.log(pubkey.length)
+    res.json({'pubkey':pubkey})
+})
 router.get("/profile", isAuthenticated, async function(req,res){
+    // get user ACC
     let acc = await accInstance.evaluateTransaction('GetUserAccControl',req.user.pubkey);
     let accJson = JSON.parse(acc.toString())
-    console.log(accJson)
-    return res.render("E-portfolio/highSchool/profile.ejs",{"acc":accJson,"contract_address":contract_address,"user":req.user.identity})
+
+    // get reviewer list
+    reviewerList = {};
+    let reviewers = await certInstance.evaluateTransaction("getReviewer");
+    reviewers = JSON.parse(reviewers.toString())
+    reviewers.forEach(function(object, index, array){
+        let value = JSON.parse(object.value)
+        reviewerList[value.pubkey] = value.reviewerName
+    });
+    console.log(reviewerList)
+
+    return res.render("E-portfolio/highSchool/profile.ejs",{"acc":accJson,"contract_address":contract_address,"user":req.user.identity,"reviewerList":reviewerList})
 })
 router.get("/delete", async function(req,res){
     let r = await accInstance.submitTransaction('Deletekey','0410dee8185f58c25565b47db7e822c188cc7d3b6b9bce1a1907e76dfb3271db317737015cb70b7e1df8459ae285a3edd36df1d12ad3c8a8d689522acc2e034fe1');
@@ -446,14 +591,13 @@ router.post("/addAttribue", isAuthenticated, async function(req,res){
         return res.send({'error': "error","result": e})
     }
 })
-
 router.post("/updatePermission", isAuthenticated, async function(req,res){
     let { orgPubkey, attributes} = req.body
     try
     {
         let acc = await accInstance.evaluateTransaction('GetUserAccControl',req.user.pubkey);
         let accJson = JSON.parse(acc.toString())
-        let attrbutesString = attributes.join(" ")
+        let attrbutesString = attributes.join("|")
 
         // check all attributes in user acc 
         attributes.forEach(attribute => {
@@ -495,6 +639,49 @@ router.post("/commitSend", isAuthenticated, async function(req,res){
         console.log(error)
         return res.send(error)
     }
+})
+router.post("/addData", async function(req,res){
+    
+    var {account} = req.body;
+    account = account.toLowerCase()
+    
+    var semester = ["1081","1082","1091","1092","1101"]
+    var classList = ["國文","英文","數學","物理","化學","生物","地科"]
+    for(var j=0;j<2;j++){
+        for(var i=0;i<classList.length;i++){
+            let x = Math.floor(Math.random()*(100-60+1))+60;
+            x = x.toString()
+            let grade = {
+                account : account,
+                semester: semester[j],
+                className:classList[i],
+                grade :x
+            }
+            await Grade.create(grade);
+        }
+    }
+    for(var i=0;i<5;i++){
+        let x = Math.floor(Math.random()*(100-15+1))+15;
+        x = x.toString()
+        let total = '/234';
+        let rank ={
+            account:account,
+            semester:semester[i],
+            rank : x + total
+        }
+        await Rank.create(rank)
+    }
+    
+    let result = await Mapping.findOne({address: account.toLowerCase()});
+    let pubkey = result.dataValues.pubkey
+    let studentInfo = {
+        account : account,
+        publicKey : pubkey,
+        Name : "王小明",
+        highSchool : "建功高中"
+    }
+    await StudentInfo.create(studentInfo)
+    res.json({"success":"good"})
 })
 
 

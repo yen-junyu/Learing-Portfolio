@@ -67,35 +67,6 @@ async function init(){
     let mspOrg1 = 'Org1MSP';
     await enrollAdmin(caClient, wallet, mspOrg1);
 
-    /*
-    //register and enroll university 
-    let universityWalletPath = path.join(__dirname, '..', '..' ,'wallet','university');
-    universityWallet = await buildWallet(Wallets, universityWalletPath);
-    const adminIdentity = await wallet.get('admin');
-    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
-	const adminUser = await provider.getUserContext(adminIdentity, 'admin');
-
-    const secret = await caClient.register({
-        affiliation: 'org1.department1',
-        enrollmentID: 'University',
-        role: 'client',
-        attrs: [ {'name': 'role' , 'value': 'reviewer' ,'ecert':true }],
-    }, adminUser);
-
-    const enrollment = await caClient.enroll({
-        enrollmentID: 'University',
-        enrollmentSecret: secret
-    });
-    const x509Identity = {
-        credentials: {
-            certificate: enrollment.certificate,
-            privateKey: enrollment.key.toBytes(),
-        },
-        mspId: mspOrg1,
-        type: 'X.509',
-    };
-    await universityWallet.put('University', x509Identity);
-    */
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg1, 'educatuinMinistry', 'org1.department1' ,null, 'admin');
     
@@ -116,7 +87,6 @@ async function init(){
     accInstance = await accChannel.getContract('AccessControlManager');
 }
 init();
-
 let isAuthenticated = function (req, res, next) {
     if (req.isAuthenticated()) {
         next();
@@ -251,7 +221,6 @@ router.get("/addReviewer", isAuthenticated, isAdmin, async function(req,res){
 router.get("/",async function(req,res){
     res.render('E-portfolio/educationMinistry/homepage.ejs',{"require_signature":require_signature})
 });
-
 module.exports = router;
 
 

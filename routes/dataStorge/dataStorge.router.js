@@ -3,6 +3,7 @@ var Web3 = require('web3');
 var fs = require('fs');
 var path = require('path')
 var db = require("../../models");
+var Awards = db.awards
 var crypto = require("crypto");
 var jwt = require('jsonwebtoken');
 
@@ -42,7 +43,7 @@ async function init(){
 
     await gateway.connect(ccp, {
         wallet : dataStorgeWallet,
-        identity: 'DataStorge',
+        identity: 'dataStorge',
         discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
     });
 
@@ -57,7 +58,7 @@ async function init(){
     console.log('get contract instance successfully'.yellow);
 }
 init();
-var activityName = "toeic"
+var activityName = "python class"
 var verifyToken = function (req, res, next) {
     var {user} = req.query;
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -89,17 +90,18 @@ var verifyToken = function (req, res, next) {
         })
     }   
 };
+
 router.post('/authenticate', async function(req, res) {
     const {publicKey, signature, nonce} = req.body;
     // show info about authenticate
-    //console.log("request hashed:"+identity);
+    
     console.log("request target:"+publicKey);
     console.log(signature);
     console.log(nonce);
     
     let  publickeyObject = ecdsa.keyFromPublic(publicKey,'hex')
     let verify = publickeyObject.verify(Buffer.from(nonce.nonce),signature)
-    console.log(verify)
+    
     if(!verify){
         return res.json({
             success: false,
@@ -147,8 +149,24 @@ router.get('/auth/nonce', async function (req, res) {
     let nonce = nonceObject.value;
     res.json({id: id, nonce: nonce});
 });
-router.get('/getProtectedData',verifyToken, async function(req, res){
-    res.json({status:200})
+router.get('/getProtectedData', verifyToken, async function(req, res){
+    var {user} = req.query;
+    var award = await Awards.findOne({where:{publicKey:user,activity:activityName}})
+    award = award.get({plain: true})
+    res.json({
+        status:true,
+        data:award
+    })
+})
+router.get('/addAward',async function(req,res){
+    let award = {
+        publicKey : "040d6a1b6903afac76b0d87b05dae5fca1a3d6f06e650d434cd78ebb49e7804a76166f854b7e44cd98766cafd4f5be678242bfaaa67004659dd4cd578eee753844",
+        data : "累積課程時數35小時",
+        activity : "python class",
+        type : "class"
+    }
+    await Awards.create(award);
+    res.json({"status":"good"})
 })
 
 /*

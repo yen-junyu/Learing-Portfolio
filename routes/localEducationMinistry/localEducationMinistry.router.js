@@ -72,36 +72,9 @@ async function init(){
 
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg3, 'TaipeiDepartmentofEducation', 'org1.department1' ,null, 'admin');
-    //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'APP_schoolA', 'org1.department1' ,null, 'client');
+    //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'cert_schoolA', 'org1.department1' ,null, 'client');
+    //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'dataStorge', 'org1.department1' ,[ {'name': 'role' , 'value': 'dataStorge' ,'ecert':true }], 'client');
     
-
-    // register data storge
-    let dataStorgeWalletPath = path.join(__dirname, '..', '..' ,'wallet','DataStorge');
-    let dataStorgeWallet = await buildWallet(Wallets, dataStorgeWalletPath);
-    const adminIdentity = await wallet.get('admin');
-    const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
-	const adminUser = await provider.getUserContext(adminIdentity, 'admin');
-    /*
-    const secret = await caClient.register({
-        affiliation: 'org1.department1',
-        enrollmentID: 'DataStorge',
-        role: 'client',
-        attrs: [ {'name': 'role' , 'value': 'dataStorge' ,'ecert':true }],
-    }, adminUser);
-    const enrollment = await caClient.enroll({
-        enrollmentID: 'DataStorge',
-        enrollmentSecret: secret
-    });
-    const x509Identity = {
-        credentials: {
-            certificate: enrollment.certificate,
-            privateKey: enrollment.key.toBytes(),
-        },
-        mspId: mspOrg3,
-        type: 'X.509',
-    };
-    await dataStorgeWallet.put('DataStorge', x509Identity);
-    */
     //create Gateway to connect to peer
     gateway = new Gateway();
     await gateway.connect(ccp, {

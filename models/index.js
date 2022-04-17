@@ -20,4 +20,9 @@ db.nonce = require("./nonce.model.js")(sequelize, Sequelize);
 db.token = require("./tokens.model.js")(sequelize, Sequelize);
 db.reviewer = require("./reviewer.model.js")(sequelize, Sequelize);
 
+db.grade = require("./grade.model.js")(sequelize, Sequelize);
+db.rank = require("./rank.model.js")(sequelize, Sequelize);
+db.studentInfo = require("./studentInfo.model.js")(sequelize, Sequelize);
+db.awards = require("./awards.model.js")(sequelize, Sequelize);
+
 module.exports = db;

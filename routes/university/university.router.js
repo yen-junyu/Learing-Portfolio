@@ -16,12 +16,12 @@ const EC = elliptic.ec;
 const ecdsaCurve = elliptic.curves['p256'];
 const ecdsa = new EC(ecdsaCurve);
 
-var x509JSON = JSON.parse(fs.readFileSync('./wallet/university/University.id', 'utf-8'));
 
 var config = JSON.parse(fs.readFileSync('./config/server_config.json', 'utf-8'));
 const web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
 const org_address = config.org_info.university.address; // org0
 const key = config.org_info.university.key; // org0
+var x509JSON = JSON.parse(fs.readFileSync(`./wallet/university/${org_address}.id`, 'utf-8'));
 
 // debug
 var colors = require('colors');
@@ -33,10 +33,12 @@ var { buildCCPOrg1, buildWallet } = require('../../Util/AppUtil.js');
 var certInstance, accInstance , awardInstance;
 var publicKey,privateKey;
 var tokens = {}
+var hosts = {}
 
 let getProtectedData = async(address) =>{
     return new Promise(async function(resolve,reject){
         try{
+            let data = {}
             // get user pubkey
             let user = await Mapping.findOne({address:address.toLowerCase()});
             let pubkey = user.dataValues.pubkey;
@@ -44,32 +46,58 @@ let getProtectedData = async(address) =>{
             let linksBuffer = await awardInstance.evaluateTransaction('getAccessLink', pubkey);
             let links  = JSON.parse(linksBuffer.toString());
             let accessLinks = {}
-
+            
             links.forEach(function(object, index, array){
                 let key = object.key.replace(/\0/g, '').replace(pubkey,'');
                 accessLinks[key] =  object.value;
             });
+           
             let acc = await accInstance.evaluateTransaction('GetPermission',pubkey);
             let attrs = JSON.parse(acc.toString());
-
+            console.log(attrs.yellow)
+            if(attrs.length==0){
+                resolve(null)
+            }
+            let awards = []
             // fetch data
-            let host = "localhost:3001/E-portfolio/dataStorge/";
-            await fetch(`http://${host}/getProtectedData?user=${pubkey}`,{
-                headers: { 'x-access-token': tokens['toeic'].jwt }
-            })
-            .then(res => res.json())
-            .then(json => {
-                console.log(json)
-                if (!json.success) throw `message ${json.message}`
-            })
-            /*
-            attrs.forEach(async function(object, index, array){
-                if(accessLinks[object]){
-                    await fetch(`http://${api}`, {
-                        headers: { 'x-access-token': token.jwt }
+            for(var i=0;i<attrs.length;i++){
+                //highschool data  
+                if(attrs[i].includes('SchoolGrade')){
+                    await fetch(`http://${hosts[attrs[i]]}/getSchoolData?user=${pubkey}`,{
+                        headers: { 'x-access-token': tokens[attrs[i]].jwt }
+                    })
+                    .then(res => res.json())
+                    .then(json => {
+                        console.log(json)
+                        if(json.status){
+                            data['schoolData'] = json
+                        }
                     })
                 }
-            })*/
+                else{
+                    
+                    await fetch(`http://${accessLinks[attrs[i]]}`,{
+                        headers: { 'x-access-token': tokens[attrs[i]].jwt }
+                    })
+                    .then(res => res.json())
+                    .then(json => {
+                        if(json.status){
+                            awards.push(json)
+                        }
+                        else{
+                            throw `fetch ${attrs[i]} error.`
+                        }
+                       
+                    })
+                    .catch((err) => {
+                        console.log(err)
+                        console.log("Authenticate Error");
+                        reject(`Authenticate Error, Error code:　${err.errno}`)
+                    })
+                }
+            }
+            data['award'] = awards;
+            return resolve(data)
         }
         catch(e){
             console.log(e)
@@ -84,7 +112,6 @@ let getIdentityToken = async(activity, host) => {
         await fetch(`http://${host}/auth/nonce?org=${org_address}`)
         .then(res => res.json())
         .then(json => {
-            console.log(json)
             if (!json.success) reject({message: json.message})
             nonceObject = json;
         })
@@ -96,11 +123,10 @@ let getIdentityToken = async(activity, host) => {
         const signKey = ecdsa.keyFromPrivate(privateKey, 'hex');
         const sig = ecdsa.sign(Buffer.from(nonceObject.nonce), signKey);
         const signature = Buffer.from(sig.toDER('hex')).toString();
-        console.log(signature)
+       
         // * let signatureObject = web3.eth.accounts.sign(nonceObject.nonce, key);
         // get identity token
         let jwt;
-        
         await fetch(`http://${host}/authenticate`, {
             method: 'POST',
             body: JSON.stringify({
@@ -112,7 +138,7 @@ let getIdentityToken = async(activity, host) => {
         })
         .then(res => res.json())
         .then(json => {
-                if (!json.success) reject({message: json.message});
+               
                 jwt = json.token
         })
         .catch((err) => {
@@ -134,7 +160,7 @@ let delay = async(ms) => {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 async function init(){
-    await delay(1000);
+    await delay(3000);
     // get public key and private key
     let secureContext = tls.createSecureContext({
         cert: x509JSON.credentials.certificate
@@ -145,9 +171,6 @@ async function init(){
 
     let { prvKeyHex } = KEYUTIL.getKey(x509JSON.credentials.privateKey);
     privateKey = prvKeyHex
-
-    console.log(publicKey.green, privateKey.green)
-
     console.log('start university'.green);
     /* 
      * const gateway = new Gateway();
@@ -164,7 +187,7 @@ async function init(){
     let gateway = new Gateway();
     await gateway.connect(ccp, {
         wallet : universityWallet,
-        identity: 'University',
+        identity: org_address,
         discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
     });
     console.log('finish gateway connection'.green);
@@ -176,16 +199,36 @@ async function init(){
     accInstance = await accChannel.getContract('AccessControlManager');
     console.log('get contract instance successfully'.green);
     
-    
-    let host = "localhost:3001/E-portfolio/dataStorge/";
-    try{
-        let token = await getIdentityToken('toeic',host)
+    for(var key in config.org_info) {
+        if(config.org_info[key].hasOwnProperty('host')){
+            let host = config.org_info[key].host;
+            let activityName = config.org_info[key].activityName;
+            hosts[activityName] = host
+            try{
+                let token = await getIdentityToken(activityName, host);
+            }
+            catch(e){
+                console.log(`get token ${activityName} error`)
+            }
+            
+        }
     }
-    catch(e){
-        console.log(e)
-    }
-    
 }
+router.get("/reviewer", async function(req,res){
+    let {address} = req.query;
+    if(!address){
+        return res.json({error:"error"})
+    }
+    let data = await getProtectedData(address.toLowerCase());
+    if(data){
+        let schoolData = data["schoolData"];
+        let award = data["award"]
+        return res.render('E-portfolio/university/reviewer.ejs',{"schoolData":schoolData,"award":award});
+    }
+    else{
+        return res.render('E-portfolio/university/reviewer.ejs',{"schoolData":null,"award":null});
+    }
+})
 router.get("/dataSharing",async function(req,res){
     let {address} = req.query;
     if(!address){
@@ -205,10 +248,10 @@ router.get("/dataSharing",async function(req,res){
 router.post("/addReviewUser",async function(req,res){
     const {address, pubkey} = req.body;
     let mapping = {};
-    mapping['dataValues'] = {error:true}
+    mapping['dataValues'] = { error:true}
     try{
         mapping = await Mapping.create(req.body);
-        console.log(mapping.dataValues)
+       
     }
     catch(e){
         console.log(e)
