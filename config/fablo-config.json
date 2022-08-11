@@ -1,0 +1,123 @@
+{
+  "$schema": "https://github.com/softwaremill/fablo/releases/download/1.0.0/schema.json",
+  "global": {
+    "fabricVersion": "2.2.0",
+    "tls": true
+  },
+  "orgs": [
+    {
+      "organization": {
+        "name": "Orderer",
+        "domain": "orderer.example.com"
+      },
+      "orderers": [
+        {
+          "groupName": "group1",
+          "type": "solo",
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "organization": {
+        "name": "Org1",
+        "domain": "org1.example.com"
+      },
+      "ca": {
+        "db": "sqlite"
+      },
+      "peer": {
+        "instances": 1,
+        "db": "CouchDb"
+      }
+    },
+    {
+      "organization": {
+        "name": "Org2",
+        "domain": "org2.example.com"
+      },
+      "ca": {
+        "db": "sqlite"
+      },
+      "peer": {
+        "instances": 1,
+        "db": "CouchDb"
+      }
+    },
+    {
+      "organization": {
+        "name": "Org3",
+        "domain": "org3.example.com"
+      },
+      "ca": {
+        "db": "sqlite"
+      },
+      "peer": {
+        "instances": 1,
+        "db": "CouchDb"
+      }
+    }
+  ],
+  "channels": [
+    {
+      "name": "acc-channel",
+      "orgs": [
+        {
+          "name": "Org1",
+          "peers": ["peer0"]
+        },
+        {
+          "name": "Org2",
+          "peers":["peer0"]
+        },
+        {
+          "name": "Org3",
+          "peers": ["peer0"]
+        }
+      ]
+    },
+    {
+      "name": "cert-channel",
+      "orgs" :[
+        {
+          "name": "Org1",
+          "peers": ["peer0"]
+        },
+        {
+          "name": "Org3",
+          "peers":["peer0"]
+        }
+      ]
+    }
+  ],
+
+  "chaincodes": [
+    {
+      "name": "AccessControlManager",
+      "version": "0.0.1",
+      "lang": "node",
+      "channel": "acc-channel",
+      "directory": "./chaincodes/chaincode-AccessControlManager-node",
+      "endorsement": "OR('Org1MSP.member', 'Org2MSP.member')"
+    },
+    {
+      "name": "certManager",
+      "version": "0.0.1",
+      "lang": "node",
+      "channel": "cert-channel",
+      "directory": "./chaincodes/chaincode-certManager-node",
+      "endorsement": "OR('Org1MSP.member', 'Org2MSP.member')"
+    },
+    {
+      "name": "issueAward",
+      "version": "0.0.1",
+      "lang": "node",
+      "channel": "cert-channel",
+      "directory": "./chaincodes/chaincode-issueAward-node",
+      "endorsement": "OR('Org1MSP.member', 'Org2MSP.member')"
+    }
+  ]
+  ,"hooks": {
+    "postGenerate": "perl -i -pe 's/MaxMessageCount: 10/MaxMessageCount: 1000/g' \"./fablo-target/fabric-config/configtx.yaml\""
+  }
+}
