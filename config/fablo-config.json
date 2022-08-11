@@ -97,7 +97,7 @@
       "version": "0.0.1",
       "lang": "node",
       "channel": "acc-channel",
-      "directory": "./chaincodes/chaincode-AccessControlManager-node",
+      "directory": "./chaincodes/chaincode-accessControlManager-node",
       "endorsement": "OR('Org1MSP.member', 'Org2MSP.member')"
     },
     {
