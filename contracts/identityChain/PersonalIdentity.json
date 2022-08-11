@@ -12,44 +12,6 @@
 				{
 					"indexed": true,
 					"internalType": "address",
-					"name": "owner",
-					"type": "address"
-				},
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "org",
-					"type": "address"
-				}
-			],
-			"name": "AccessAuthorization",
-			"type": "event"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "owner",
-					"type": "address"
-				},
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "org",
-					"type": "address"
-				}
-			],
-			"name": "AccessRevocation",
-			"type": "event"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": true,
-					"internalType": "address",
 					"name": "previousOwner",
 					"type": "address"
 				},
@@ -64,29 +26,29 @@
 			"type": "event"
 		},
 		{
-			"constant": false,
+			"anonymous": false,
 			"inputs": [
 				{
+					"indexed": false,
 					"internalType": "string",
-					"name": "attr",
+					"name": "Material",
 					"type": "string"
 				},
 				{
-					"internalType": "address",
-					"name": "target",
-					"type": "address"
-				},
-				{
+					"indexed": false,
 					"internalType": "address",
 					"name": "org",
 					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "EncryptObject",
+					"type": "string"
 				}
 			],
-			"name": "authorizeAccess",
-			"outputs": [],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
+			"name": "setEncryptMaterialEvent",
+			"type": "event"
 		},
 		{
 			"constant": true,
@@ -129,33 +91,13 @@
 			"inputs": [
 				{
 					"internalType": "string",
-					"name": "attr",
+					"name": "Material",
 					"type": "string"
-				},
-				{
-					"internalType": "address",
-					"name": "target",
-					"type": "address"
 				},
 				{
 					"internalType": "address",
 					"name": "org",
 					"type": "address"
-				}
-			],
-			"name": "revokeAccess",
-			"outputs": [],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "string",
-					"name": "Material",
-					"type": "string"
 				},
 				{
 					"internalType": "string",
@@ -182,37 +124,6 @@
 			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "string",
-					"name": "attr",
-					"type": "string"
-				},
-				{
-					"internalType": "address",
-					"name": "target",
-					"type": "address"
-				},
-				{
-					"internalType": "address",
-					"name": "org",
-					"type": "address"
-				}
-			],
-			"name": "validatePermission",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
 			"type": "function"
 		}
 	]

@@ -7,56 +7,17 @@
 			"type": "constructor"
 		},
 		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "orgAddress",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "uint256",
-					"name": "status",
-					"type": "uint256"
-				}
-			],
-			"name": "AddUserEvent",
-			"type": "event"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "orgAddress",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "userAccount",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "string",
-					"name": "hashed",
-					"type": "string"
-				}
-			],
-			"name": "BindUserAccountEvent",
-			"type": "event"
-		},
-		{
 			"constant": false,
 			"inputs": [
 				{
 					"internalType": "string",
 					"name": "hashed",
 					"type": "string"
+				},
+				{
+					"internalType": "uint256",
+					"name": "userType",
+					"type": "uint256"
 				}
 			],
 			"name": "addUser",
