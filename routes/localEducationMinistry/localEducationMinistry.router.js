@@ -73,6 +73,10 @@ async function init(){
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg3, 'TaipeiDepartmentofEducation', 'org1.department1' ,null, 'admin');
     await registerAndEnrollUser(caClient, wallet, mspOrg3, 'cert_schoolA', 'org1.department1' ,null, 'client');
+    fs.copyFile('./wallet/localEducatuinMinistry/cert_schoolA.id', './wallet/highSchool/cert_schoolA.id', (err) => {
+        if (err) throw err;
+        console.log('source.txt was copied to destination.txt');
+    });
     //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'dataStorge', 'org1.department1' ,[ {'name': 'role' , 'value': 'dataStorge' ,'ecert':true }], 'client');
     
     //create Gateway to connect to peer
