@@ -24,8 +24,9 @@ Before getting started, you should build the [ethereum environment](https://gith
 ### Ethereum network
 (optional) Here is an example of using docker to create a ethereum test network.
 ```sh
-    docker run --detach --publish 8545:8545 trufflesuite/ganache-cli:latest --seed 0 --gasPrice 0
-    docker logs [ganache_container_id]
+    > docker run --detach --publish 8545:8545 trufflesuite/ganache-cli:latest --seed 0 --gasPrice 0
+    cb1ce0da5c06202929175c151a0c7ce16e3306d808eb03211185b091cc00c475
+    > docker logs cb1
     Available Accounts
     ==================
     (0) 0xe092b1fa25DF5786D151246E492Eed3d15EA4dAA (100 ETH) // DID-chain and Deploy smart contract
