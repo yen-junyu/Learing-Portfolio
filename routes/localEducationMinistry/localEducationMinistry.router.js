@@ -72,7 +72,7 @@ async function init(){
 
     //register and enroll app admin (need admin attribute)
     await registerAndEnrollUser(caClient, wallet, mspOrg3, 'TaipeiDepartmentofEducation', 'org1.department1' ,null, 'admin');
-    //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'cert_schoolA', 'org1.department1' ,null, 'client');
+    await registerAndEnrollUser(caClient, wallet, mspOrg3, 'cert_schoolA', 'org1.department1' ,null, 'client');
     //await registerAndEnrollUser(caClient, wallet, mspOrg3, 'dataStorge', 'org1.department1' ,[ {'name': 'role' , 'value': 'dataStorge' ,'ecert':true }], 'client');
     
     //create Gateway to connect to peer
