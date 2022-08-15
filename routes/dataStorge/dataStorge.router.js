@@ -26,6 +26,9 @@ var dataStorge_key = config.org_info.dataStorge.key;
 //var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
 //var contract_address = config.contracts.identityManagerAddress;
 var web3 = new Web3(new Web3.providers.WebsocketProvider(config.web3_provider));
+var identityManager = JSON.parse(fs.readFileSync('./contracts/identityChain/IdentityManager.json', 'utf-8'));
+var personalIdentity = JSON.parse(fs.readFileSync('./contracts/identityChain/PersonalIdentity.json', 'utf-8'));
+var contract_address = config.contracts.identityManagerAddress;
 var router = express.Router();
 //var Mapping = require("../../controllers/mapping.controller")
 
@@ -91,6 +94,10 @@ var verifyToken = function (req, res, next) {
     }   
 };
 
+router.get("/",async function(req,res){
+    var require_signature = "activityVendor?nonce=6512"
+    res.render('E-portfolio/dataStorge/homepage.ejs',{"require_signature":require_signature})
+});
 router.post('/authenticate', async function(req, res) {
     const {publicKey, signature, nonce} = req.body;
     // show info about authenticate
@@ -168,7 +175,50 @@ router.get('/addAward',async function(req,res){
     await Awards.create(award);
     res.json({"status":"good"})
 })
+router.get('/askPubkey',async function(req,res){
+    var require_signature = "activityVendor?nonce=7812"
+    res.render('E-portfolio/dataStorge/askpubkey.ejs',{"require_signature":require_signature,contract_address})
+})
+router.post('/loginWithMetamask',
+async function(req,res,next){
+    let {account,signature} = req.body
+    var require_signature = "activityVendor?nonce=6512"
+    let signingAccount = web3.eth.accounts.recover(require_signature, signature).toLowerCase();
+    if(signingAccount != account.toLowerCase()){
+        return res.send({'msg':'Failed to verify signature'});
+    }
+    let identityManagerInstance = new web3.eth.Contract(identityManager.abi, contract_address);
+    let DID = await identityManagerInstance.methods.getId().call({from: account});
 
+    if(DID){
+        var pubkey;
+        try{
+            //Confirm from DB that the user has logged in
+            throw("no")
+            let result = await Mapping.findOne({address: account.toLowerCase()});
+            pubkey = result.dataValues.pubkey
+            console.log(pubkey)
+        }
+        catch(e){
+            console.log(e)
+            pubkey = null
+        }
+        if(pubkey){
+            req.hashed = DID;
+            req.pubkey = pubkey;
+            next();
+        }
+        else{
+            res.send({url: "/E-portfolio/dataStorge/askPubkey"});
+        }
+    }
+    else{
+        return res.send({'msg':'DID dose not exist.'});
+    }
+},
+async function(req,res){
+    res.send({url: "/E-portfolio/dataStorge/profile"});
+})
 /*
 router.get('/protected', verifyTokenForDeposit, async function(req, res) {
     let data = req.decoded;
