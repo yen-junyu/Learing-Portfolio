@@ -94,8 +94,11 @@ var awardInstanceListener = async (event) => {
     //console.log(eventTransaction.transactionData.actions[0].payload.chaincode_proposal_payload.input.chaincode_spec.input.args[3].toString())
 	//console.log(`*** transaction: ${eventTransaction.transactionId} status:${eventTransaction.status}`);
 }
-
+let delay = async(ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
 async function init(){
+    await delay(5000);
     //build ca client
     let ccpOrg2 = buildCCPOrg2();
     caClient = await buildCAClient(FabricCAServices_1, ccpOrg2, 'ca.org2.example.com');
