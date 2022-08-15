@@ -55,12 +55,12 @@ Before getting started, you should build the [ethereum environment](https://gith
 ```
 Import those key to metamask for testing.
 
-Deploy ethereun smart contract
+### Deploy ethereun smart contract
 (optional) If you don't have `truffle` toolkit, you also can compile your contract code by online IDE, e.g., [Remix](https://remix.ethereum.org/).
 
 ### Fabric network
 * Fablo setup
-Put [fablo-config.json](https://github.com/junyuwow/Learing-Portfolio/blob/main/config/fablo-config.json) and [chaincode](https://github.com/junyuwow/Learing-Portfolio/tree/main/contracts/chaincodes) to your fablo repository.
+copy [fablo-config.json](https://github.com/junyuwow/Learing-Portfolio/blob/main/config/fablo-config.json) and [chaincode](https://github.com/junyuwow/Learing-Portfolio/tree/main/contracts/chaincodes) to your fablo repository.
 #### fablo folder structure
     .
     ├─ fablo repository
