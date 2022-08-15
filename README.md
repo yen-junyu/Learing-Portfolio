@@ -58,54 +58,8 @@ run test-network
     ```sh
     npm install
     ```
-3. Setup configuration ([server-config.json](https://github.com/jenhao-thesis/LdapDapp/blob/main/server-config-example.json))
-    ```sh
-    cp server-config-example.json server-config.json
-    ```
-
-    For example:
-    ```json
-    {
-        "ldap": {
-            "server": {
-                "url": "ldap://[ip:port]",
-                "bindDN": "[bindDN]",
-                "bindCredentials": "[bindCredentials]",
-                "searchBase": "[searchBase]",
-                "searchFilter": "[searchFilter]"
-            },
-            "usernameField": "username",
-            "passwordField": "password"
-        },
-        "redis": {
-            "host": "[ip]",
-            "port": "[port]"
-        },
-        "contracts": {
-            "organizationManagerAddress": "[contract address]",
-            "accessManagerAddress": ""
-        },
-        "admin_address": "[administrator address]",
-        "admin_key": "[administrator private key]",
-        "web3_provider": "ws://[ip:port]",
-        "org_mapping": {
-            "[address of organization A(upper case only)]": ["[ip:port]", "[organization name for display on website]"],
-            "[address of organization B(upper case only)]": ["[ip:port]", "[organization name for display on website]"],
-            "[address of organization C(upper case only)]": ["[ip:port]", "[organization name for display on website]"],
-            "[address of organization D(upper case only)]": ["[ip:port]", "[organization name for display on website]"],
-            "[address of organization E(upper case only)]": ["[ip:port]", "[organization name for display on website]"]
-        }
-    }
-    ```
-
-5. Enter your the contract address (<em>OMgr</em>) in `server-config.json`.
-
-6. (optional) Convert `web3_init.js` to `web3_bundle.js`
-    ```sh
-    browserify web3_init.js -o web3_bundle.js
-    ```
-
-7. Launch Dapp.
+3. Copy connection-profiles to config dir
+4. Launch Dapp.
     ```sh
     npm start
     ```
