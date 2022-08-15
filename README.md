@@ -61,7 +61,12 @@ run test-network
     ```sh
     npm install
     ```
-3. Copy connection-profiles to config dir
+3. Setup hyperledger fabric connection profiles 
+    ```sh
+    cp ./../fablo/fablo-target/fabric-config/connection-profiles/connection-profile-org1.jso connection-org1.json
+    cp ./../fablo/fablo-target/fabric-config/connection-profiles/connection-profile-org2.jso connection-org2.json
+    cp ./../fablo/fablo-target/fabric-config/connection-profiles/connection-profile-org3.jso connection-org3.json
+    ```
 4. Launch Dapp.
     ```sh
     npm start
